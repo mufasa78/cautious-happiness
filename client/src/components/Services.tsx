@@ -201,6 +201,24 @@ const Services: React.FC<ServicesProps> = ({ onScrollToSection }) => {
                               For this project, we leveraged our expertise in {selectedService.technologies.slice(0, 3).join(', ')} to deliver a solution that exceeded our client's expectations. By focusing on {selectedService.features[0].toLowerCase()} and {selectedService.features[1].toLowerCase()}, we were able to create a {selectedService.title.toLowerCase()} that truly made a difference.
                             </p>
                             
+                            {/* Project URL if available */}
+                            {'projectUrl' in selectedService && selectedService.projectUrl && (
+                              <div className="mt-4 mb-6">
+                                <h4 className="font-medium mb-2">View Live Project</h4>
+                                <a
+                                  href={selectedService.projectUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center bg-primary/10 px-4 py-2 rounded-md text-primary hover:bg-primary/20 transition-colors"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                  </svg>
+                                  Visit {selectedService.projectUrl.replace(/^https?:\/\//, '')}
+                                </a>
+                              </div>
+                            )}
+                            
                             <div className="border-t border-gray-100 pt-4 mt-4">
                               <h4 className="font-medium mb-2">Ready to achieve similar results?</h4>
                               <p className="text-sm text-gray-600 mb-4">

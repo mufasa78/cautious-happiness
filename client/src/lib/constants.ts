@@ -11,7 +11,8 @@ export const SERVICES = [
       'Modern code practices and architecture',
       'Continuous integration and deployment'
     ],
-    caseStudy: 'Successfully rebuilt a client\'s website with Next.js, resulting in 3x faster load times and 40% increase in conversion rates.',
+    caseStudy: 'Successfully built UTUCars Africa with Next.js, creating a revolutionary automotive platform for the African market that handles thousands of vehicle listings with exceptional performance.',
+    projectUrl: 'https://utucars.africa',
     detailId: 'web-development'
   },
   {
@@ -131,6 +132,13 @@ export const PORTFOLIO_ITEMS = [
 ];
 
 export const TESTIMONIALS = [
+  {
+    content: "UTUCars Africa is thriving thanks to the exceptional web platform developed by Mufasa. The modern tech stack they implemented provides outstanding performance and reliability. They truly understood our vision and delivered a product that exceeded our expectations.",
+    author: "Godfrey Wainaina",
+    position: "CEO, UTUCars Africa",
+    image: "https://randomuser.me/api/portraits/men/36.jpg",
+    featured: true
+  },
   {
     content: "Working with Mufasa was an absolute pleasure. They understood our vision right away and delivered a website that exceeded our expectations. The attention to detail and professionalism was outstanding.",
     author: "Sarah Johnson",
