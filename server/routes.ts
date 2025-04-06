@@ -3,6 +3,17 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { clientProjectSchema, insertContactSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
+import { ZodError } from "zod";
+import { Octokit } from "octokit";
+
+// Custom error handler for Zod validation errors
+function handleValidationError(error: unknown) {
+  if (error instanceof ZodError) {
+    return fromZodError(error);
+  }
+  
+  return { message: error instanceof Error ? error.message : "An unexpected error occurred" };
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes
@@ -20,18 +31,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         data: result
       });
     } catch (error) {
-      if (error instanceof Error) {
-        const validationError = fromZodError(error);
-        res.status(400).json({
-          success: false,
-          message: validationError.message
-        });
-      } else {
-        res.status(500).json({
-          success: false,
-          message: "An unexpected error occurred"
-        });
-      }
+      const validationError = handleValidationError(error);
+      
+      res.status(error instanceof ZodError ? 400 : 500).json({
+        success: false,
+        message: validationError.message
+      });
     }
   });
   
@@ -47,18 +52,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         data: contact
       });
     } catch (error) {
-      if (error instanceof Error) {
-        const validationError = fromZodError(error);
-        res.status(400).json({
-          success: false,
-          message: validationError.message
-        });
-      } else {
-        res.status(500).json({
-          success: false,
-          message: "An unexpected error occurred"
-        });
-      }
+      const validationError = handleValidationError(error);
+      
+      res.status(error instanceof ZodError ? 400 : 500).json({
+        success: false,
+        message: validationError.message
+      });
     }
   });
   
@@ -70,9 +69,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const clients = await storage.getClients();
       res.json(clients);
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to retrieve clients";
       res.status(500).json({
         success: false,
-        message: "Failed to retrieve clients"
+        message: errorMessage
       });
     }
   });
@@ -97,9 +97,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         projects
       });
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to retrieve client details";
       res.status(500).json({
         success: false,
-        message: "Failed to retrieve client details"
+        message: errorMessage
       });
     }
   });
@@ -110,9 +111,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const projects = await storage.getProjects();
       res.json(projects);
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to retrieve projects";
       res.status(500).json({
         success: false,
-        message: "Failed to retrieve projects"
+        message: errorMessage
       });
     }
   });
@@ -145,9 +147,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         data: updatedProject
       });
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to update project status";
       res.status(500).json({
         success: false,
-        message: "Failed to update project status"
+        message: errorMessage
       });
     }
   });
@@ -158,9 +161,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const contacts = await storage.getContacts();
       res.json(contacts);
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to retrieve contact submissions";
       res.status(500).json({
         success: false,
-        message: "Failed to retrieve contact submissions"
+        message: errorMessage
+      });
+    }
+  });
+  
+  // GitHub API integration - fetch repositories from mufasa78
+  apiRouter.get("/github/repos", async (req, res) => {
+    try {
+      const octokit = new Octokit();
+      
+      // Fetch repositories for the specific GitHub username
+      const response = await octokit.rest.repos.listForUser({
+        username: 'mufasa78',
+        sort: 'updated',
+        direction: 'desc',
+        per_page: 10 // Limit to top 10 repos
+      });
+      
+      // Transform the data to include only what we need
+      const repositories = response.data.map(repo => ({
+        id: repo.id,
+        name: repo.name,
+        description: repo.description,
+        url: repo.html_url,
+        stars: repo.stargazers_count,
+        forks: repo.forks_count,
+        language: repo.language,
+        created_at: repo.created_at,
+        updated_at: repo.updated_at,
+        topics: repo.topics || [],
+        homepage: repo.homepage
+      }));
+      
+      res.json({
+        success: true,
+        data: repositories
+      });
+    } catch (error) {
+      console.error('GitHub API error:', error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to retrieve GitHub repositories";
+      res.status(500).json({
+        success: false,
+        message: errorMessage
       });
     }
   });

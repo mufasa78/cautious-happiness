@@ -5,6 +5,8 @@ import {
   contacts, type Contact, type InsertContact,
   type ClientProjectSubmission
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, desc } from "drizzle-orm";
 
 // modify the interface with any CRUD methods
 // you might need
@@ -165,4 +167,105 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export class DatabaseStorage implements IStorage {
+  // User methods
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db.insert(users).values(insertUser).returning();
+    return user;
+  }
+  
+  // Client methods
+  async createClientWithProject(submission: ClientProjectSubmission): Promise<{client: Client, project: Project}> {
+    // Create client
+    const clientData: InsertClient = {
+      fullName: submission.fullName,
+      email: submission.email,
+      phone: submission.phone,
+      company: submission.company || null,
+      address: submission.address || null,
+    };
+    
+    const [client] = await db.insert(clients).values(clientData).returning();
+    
+    // Create project
+    const projectData: InsertProject = {
+      clientId: client.id,
+      projectType: submission.projectType,
+      description: submission.description,
+      features: submission.features || [],
+      budget: submission.budget,
+      timeline: submission.timeline,
+      startDate: submission.startDate || null,
+      deadline: submission.deadline || null,
+      additionalRequirements: submission.additionalRequirements || null,
+      status: 'pending',
+    };
+    
+    const [project] = await db.insert(projects).values(projectData).returning();
+    
+    return { client, project };
+  }
+
+  async getClients(): Promise<Client[]> {
+    return db.select().from(clients).orderBy(desc(clients.createdAt));
+  }
+
+  async getClientById(id: number): Promise<Client | undefined> {
+    const [client] = await db.select().from(clients).where(eq(clients.id, id));
+    return client || undefined;
+  }
+  
+  // Project methods
+  async getProjects(): Promise<Project[]> {
+    return db.select().from(projects).orderBy(desc(projects.createdAt));
+  }
+
+  async getProjectById(id: number): Promise<Project | undefined> {
+    const [project] = await db.select().from(projects).where(eq(projects.id, id));
+    return project || undefined;
+  }
+
+  async getProjectsByClientId(clientId: number): Promise<Project[]> {
+    return db.select()
+      .from(projects)
+      .where(eq(projects.clientId, clientId))
+      .orderBy(desc(projects.createdAt));
+  }
+
+  async updateProjectStatus(id: number, status: string): Promise<Project | undefined> {
+    const [updatedProject] = await db
+      .update(projects)
+      .set({ status })
+      .where(eq(projects.id, id))
+      .returning();
+    
+    return updatedProject || undefined;
+  }
+  
+  // Contact form submissions
+  async createContact(insertContact: InsertContact): Promise<Contact> {
+    const [contact] = await db
+      .insert(contacts)
+      .values(insertContact)
+      .returning();
+    
+    return contact;
+  }
+
+  async getContacts(): Promise<Contact[]> {
+    return db.select().from(contacts).orderBy(desc(contacts.createdAt));
+  }
+}
+
+// Switch from MemStorage to DatabaseStorage
+export const storage = new DatabaseStorage();
