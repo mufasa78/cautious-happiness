@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>John Mufasa - Resume</title>
+    <style>
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #2563eb;
+            padding-bottom: 20px;
+        }
+        .header h1 {
+            margin-bottom: 5px;
+            color: #1e40af;
+        }
+        .header h2 {
+            font-weight: normal;
+            margin-top: 0;
+            font-size: 18px;
+            color: #666;
+        }
+        .contact {
+            font-size: 16px;
+            margin-top: 15px;
+        }
+        .section {
+            margin-bottom: 25px;
+        }
+        .section h3 {
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+            color: #1e40af;
+        }
+        .job {
+            margin-bottom: 20px;
+        }
+        .job-title {
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .job-company {
+            font-weight: bold;
+            color: #2563eb;
+        }
+        .job-period {
+            color: #666;
+            font-style: italic;
+        }
+        .job-description {
+            margin-top: 10px;
+        }
+        .skills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .skill {
+            background-color: #e0e7ff;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        ul {
+            padding-left: 20px;
+        }
+        @media print {
+            body {
+                padding: 0;
+            }
+            .no-print {
+                display: none;
+            }
+        }
+        .print-button {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .print-button:hover {
+            background-color: #1e40af;
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print">
+        <button class="print-button" onclick="window.print()">Print/Save as PDF</button>
+    </div>
+
+    <div class="header">
+        <h1>John Mufasa</h1>
+        <h2>Full Stack Web Developer & Software Engineer</h2>
+        <div class="contact">
+            Email: mufasa@utucars.africa | Phone: +254 700 000000 | Location: Nairobi, Kenya
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>PROFESSIONAL SUMMARY</h3>
+        <p>
+            Experienced full-stack developer with over 8 years of expertise in building modern web applications using React, Vite, Next.js, and other cutting-edge technologies. Specializing in creating high-performance, responsive websites with exceptional user experiences and industry-leading search and filtering systems.
+        </p>
+    </div>
+
+    <div class="section">
+        <h3>EXPERIENCE</h3>
+        
+        <div class="job">
+            <div class="job-title">Lead Developer</div>
+            <div class="job-company">UTUCars Africa</div>
+            <div class="job-period">January 2022 - Present</div>
+            <div class="job-description">
+                <ul>
+                    <li>Built a revolutionary automotive marketplace platform using React/Vite that connects buyers and sellers throughout Africa</li>
+                    <li>Developed industry-leading search and filtering system allowing users to filter by make, model, year, price, mileage and other parameters with real-time results</li>
+                    <li>Designed and implemented intuitive UI with interactive vehicle galleries and responsive design for all device types</li>
+                    <li>Created RESTful APIs and database architecture for handling thousands of vehicle listings with exceptional performance</li>
+                    <li>Optimized frontend performance for faster page loads and improved user experience, even on slower connections</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="job">
+            <div class="job-title">Senior Software Engineer</div>
+            <div class="job-company">ThriveTech Solutions</div>
+            <div class="job-period">May 2019 - December 2021</div>
+            <div class="job-description">
+                <ul>
+                    <li>Led development of multiple client websites and web applications using Next.js, React and Node.js</li>
+                    <li>Implemented complex e-commerce platforms with payment integration, inventory management, and order tracking</li>
+                    <li>Managed a team of 4 developers, providing mentorship and code reviews</li>
+                    <li>Increased site performance scores by an average of 65% through optimization techniques</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="job">
+            <div class="job-title">Web Developer</div>
+            <div class="job-company">Digital Innovators Ltd</div>
+            <div class="job-period">August 2017 - April 2019</div>
+            <div class="job-description">
+                <ul>
+                    <li>Developed responsive websites for various clients across different industries</li>
+                    <li>Created custom CMS solutions using WordPress and headless CMS architectures</li>
+                    <li>Implemented SEO best practices resulting in improved search rankings</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>TECHNICAL SKILLS</h3>
+        <div class="skills">
+            <span class="skill">React</span>
+            <span class="skill">Vite</span>
+            <span class="skill">Next.js</span>
+            <span class="skill">TypeScript</span>
+            <span class="skill">JavaScript</span>
+            <span class="skill">TailwindCSS</span>
+            <span class="skill">Node.js</span>
+            <span class="skill">Express</span>
+            <span class="skill">Python</span>
+            <span class="skill">Django</span>
+            <span class="skill">PostgreSQL</span>
+            <span class="skill">MongoDB</span>
+            <span class="skill">Git</span>
+            <span class="skill">CI/CD</span>
+            <span class="skill">AWS</span>
+            <span class="skill">Firebase</span>
+            <span class="skill">REST APIs</span>
+            <span class="skill">GraphQL</span>
+            <span class="skill">Responsive Design</span>
+            <span class="skill">Performance Optimization</span>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>EDUCATION</h3>
+        <div class="job">
+            <div class="job-title">Bachelor of Science in Computer Science</div>
+            <div class="job-company">University of Nairobi</div>
+            <div class="job-period">2013 - 2017</div>
+        </div>
+    </div>
+
+    <script>
+        // You can add any JavaScript functionality here if needed
+    </script>
+</body>
+</html>
