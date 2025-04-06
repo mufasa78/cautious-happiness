@@ -62,7 +62,7 @@ const Testimonials: React.FC = () => {
                     <div>
                       <h3 className="text-2xl font-bold mb-4">Featured Project: UTUCars Africa</h3>
                       <p className="text-gray-600 mb-6">
-                        UTUCars Africa is a pioneering automotive platform built with React/Vite that revolutionizes how people buy, sell, and manage vehicles in Africa. Our flagship project features the market's best search and filtering system, allowing users to efficiently find vehicles with precise specifications.
+                        UTUCars Africa is a pioneering automotive marketplace built with React/Vite that connects buyers and sellers of vehicles throughout Africa. The platform features an innovative multi-parameter search and filtering system that allows users to find specific vehicles by make, model, year, price range, fuel type, and many other customizable criteria—all with real-time results and exceptional performance.
                       </p>
                       <div className="space-y-3">
                         <div className="flex items-start">
@@ -87,7 +87,7 @@ const Testimonials: React.FC = () => {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                             </svg>
                           </div>
-                          <span>Secure payment integration and user authentication</span>
+                          <span>Intuitive UI with interactive vehicle galleries</span>
                         </div>
                       </div>
                       <div className="mt-6">

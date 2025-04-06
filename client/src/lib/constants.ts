@@ -11,7 +11,7 @@ export const SERVICES = [
       'Modern code practices and architecture',
       'API integration and real-time data handling'
     ],
-    caseStudy: 'Successfully built UTUCars Africa with React/Vite, creating a revolutionary automotive platform for the African market featuring the best search and filtering system for vehicles, handling thousands of listings with exceptional performance.',
+    caseStudy: 'Successfully built UTUCars Africa with React/Vite, creating a comprehensive automotive marketplace with an industry-leading search and filtering system. The platform features a multi-parameter filtering interface that lets users narrow results by make, model, year, price, and numerous technical specifications—all delivering results in real-time with optimal performance even on slower connections.',
     projectUrl: 'https://utucars.africa',
     detailId: 'web-development'
   },
@@ -133,7 +133,7 @@ export const PORTFOLIO_ITEMS = [
 
 export const TESTIMONIALS = [
   {
-    content: "UTUCars Africa is thriving thanks to the exceptional web platform developed by Mufasa using React and Vite. The advanced search and filtering system they created is the best in the market, allowing our customers to find vehicles with incredible precision. The performance and reliability are outstanding, and they truly understood our vision.",
+    content: "UTUCars Africa is thriving thanks to the exceptional web platform developed by Mufasa using React and Vite. The search and filtering system they created allows our customers to filter vehicles by make, model, year, price, mileage, fuel type, transmission, and many other parameters simultaneously—all with lightning-fast response times. No other automotive platform in Africa offers this level of search precision.",
     author: "Godfrey Wainaina",
     position: "CEO, UTUCars Africa",
     image: "https://randomuser.me/api/portraits/men/36.jpg",
