@@ -3,15 +3,15 @@ export const SERVICES = [
     icon: 'laptop-code',
     title: 'Modern Web Development',
     description: 'Custom website development using cutting-edge frameworks like React, Next.js, and Vue. Creating fast, responsive, and SEO-optimized web applications that deliver exceptional user experiences.',
-    technologies: ['React', 'Next.js', 'Vue.js', 'TypeScript', 'JavaScript'],
+    technologies: ['React', 'Vite', 'TypeScript', 'JavaScript', 'TailwindCSS'],
     features: [
-      'Server-side rendering for improved SEO',
-      'Static site generation for blazing-fast load times',
-      'Progressive Web App (PWA) capabilities',
+      'Advanced search and filtering capabilities',
+      'Optimized performance for seamless user experience',
+      'Responsive design for all device types',
       'Modern code practices and architecture',
-      'Continuous integration and deployment'
+      'API integration and real-time data handling'
     ],
-    caseStudy: 'Successfully built UTUCars Africa with Next.js, creating a revolutionary automotive platform for the African market that handles thousands of vehicle listings with exceptional performance.',
+    caseStudy: 'Successfully built UTUCars Africa with React/Vite, creating a revolutionary automotive platform for the African market featuring the best search and filtering system for vehicles, handling thousands of listings with exceptional performance.',
     projectUrl: 'https://utucars.africa',
     detailId: 'web-development'
   },
@@ -133,7 +133,7 @@ export const PORTFOLIO_ITEMS = [
 
 export const TESTIMONIALS = [
   {
-    content: "UTUCars Africa is thriving thanks to the exceptional web platform developed by Mufasa. The modern tech stack they implemented provides outstanding performance and reliability. They truly understood our vision and delivered a product that exceeded our expectations.",
+    content: "UTUCars Africa is thriving thanks to the exceptional web platform developed by Mufasa using React and Vite. The advanced search and filtering system they created is the best in the market, allowing our customers to find vehicles with incredible precision. The performance and reliability are outstanding, and they truly understood our vision.",
     author: "Godfrey Wainaina",
     position: "CEO, UTUCars Africa",
     image: "https://randomuser.me/api/portraits/men/36.jpg",

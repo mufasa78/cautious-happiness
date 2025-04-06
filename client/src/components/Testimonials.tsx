@@ -62,7 +62,7 @@ const Testimonials: React.FC = () => {
                     <div>
                       <h3 className="text-2xl font-bold mb-4">Featured Project: UTUCars Africa</h3>
                       <p className="text-gray-600 mb-6">
-                        UTUCars Africa is a pioneering automotive platform that revolutionizes how people buy, sell, and manage vehicles in Africa. This flagship project showcases our ability to build sophisticated web applications with modern technologies.
+                        UTUCars Africa is a pioneering automotive platform built with React/Vite that revolutionizes how people buy, sell, and manage vehicles in Africa. Our flagship project features the market's best search and filtering system, allowing users to efficiently find vehicles with precise specifications.
                       </p>
                       <div className="space-y-3">
                         <div className="flex items-start">
@@ -71,7 +71,7 @@ const Testimonials: React.FC = () => {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                             </svg>
                           </div>
-                          <span>Next.js frontend with optimized performance</span>
+                          <span>React/Vite frontend with blazing-fast performance</span>
                         </div>
                         <div className="flex items-start">
                           <div className="bg-primary/10 p-1 rounded-full mr-3 mt-0.5">
@@ -79,7 +79,7 @@ const Testimonials: React.FC = () => {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                             </svg>
                           </div>
-                          <span>Advanced search and filtering system</span>
+                          <span>Best-in-class search and filtering system for vehicles</span>
                         </div>
                         <div className="flex items-start">
                           <div className="bg-primary/10 p-1 rounded-full mr-3 mt-0.5">
