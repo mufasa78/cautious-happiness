@@ -1,33 +1,93 @@
 export const SERVICES = [
   {
     icon: 'laptop-code',
-    title: 'Web Development',
-    description: 'Custom website development using modern technologies and best practices, ensuring responsive, fast, and SEO-friendly results.',
+    title: 'Modern Web Development',
+    description: 'Custom website development using cutting-edge frameworks like React, Next.js, and Vue. Creating fast, responsive, and SEO-optimized web applications that deliver exceptional user experiences.',
+    technologies: ['React', 'Next.js', 'Vue.js', 'TypeScript', 'JavaScript'],
+    features: [
+      'Server-side rendering for improved SEO',
+      'Static site generation for blazing-fast load times',
+      'Progressive Web App (PWA) capabilities',
+      'Modern code practices and architecture',
+      'Continuous integration and deployment'
+    ],
+    caseStudy: 'Successfully rebuilt a client\'s website with Next.js, resulting in 3x faster load times and 40% increase in conversion rates.',
+    detailId: 'web-development'
+  },
+  {
+    icon: 'layer-group',
+    title: 'Fullstack Applications',
+    description: 'Building end-to-end solutions with modern frameworks like Astro, Svelte, and Python/Django. From database design to interactive frontends, we handle every aspect of your application development.',
+    technologies: ['Astro', 'Svelte', 'Python', 'Django', 'Flask', 'Express.js', 'PostgreSQL'],
+    features: [
+      'End-to-end application architecture',
+      'Database design and optimization',
+      'RESTful API development',
+      'GraphQL implementations',
+      'User authentication and authorization'
+    ],
+    caseStudy: 'Developed a SaaS platform using Svelte and Express.js that helped our client acquire 10,000+ users within the first 3 months.',
+    detailId: 'fullstack-apps'
   },
   {
     icon: 'mobile-alt',
-    title: 'Responsive Design',
-    description: 'Creating websites that look and function perfectly on all devices, from desktops to smartphones and tablets.',
+    title: 'Responsive & Mobile Design',
+    description: 'Creating websites that look and function flawlessly across all devices and screen sizes. Our mobile-first approach ensures your site performs optimally on smartphones, tablets, and desktops.',
+    technologies: ['Tailwind CSS', 'CSS Grid', 'Flexbox', 'SASS/SCSS', 'Mobile-first design'],
+    features: [
+      'Mobile-first development approach',
+      'Cross-browser compatibility',
+      'Touch-friendly interface design',
+      'Optimized media loading for mobile',
+      'Responsive typography and layouts'
+    ],
+    caseStudy: 'Redesigned a client\'s e-commerce site to be fully responsive, increasing mobile conversions by 65%.',
+    detailId: 'responsive-design'
   },
   {
     icon: 'shopping-cart',
     title: 'E-commerce Solutions',
-    description: 'Building powerful online stores with secure payment processing, inventory management, and seamless user experience.',
+    description: 'Building powerful online stores with modern e-commerce platforms and frameworks. From product catalogs to checkout processes, we create seamless shopping experiences that drive conversions.',
+    technologies: ['Shopify', 'WooCommerce', 'Next.js Commerce', 'Stripe', 'PayPal'],
+    features: [
+      'Custom product catalog and filtering',
+      'Secure checkout implementation',
+      'Payment gateway integration',
+      'Inventory management systems',
+      'Order tracking and customer accounts'
+    ],
+    caseStudy: 'Launched a Next.js-based e-commerce store that processes over 1,000 orders daily with a 99.9% uptime.',
+    detailId: 'ecommerce-solutions'
   },
   {
     icon: 'paint-brush',
     title: 'UI/UX Design',
-    description: 'Creating beautiful, intuitive interfaces and user experiences that engage visitors and improve conversion rates.',
-  },
-  {
-    icon: 'server',
-    title: 'CMS Development',
-    description: 'Custom content management systems that make it easy for you to update and manage your website\'s content.',
+    description: 'Creating beautiful, intuitive interfaces and user experiences that engage visitors and drive results. We combine aesthetic design with functional usability to create websites that both look good and perform well.',
+    technologies: ['Figma', 'Adobe XD', 'Sketch', 'Framer', 'Design Systems'],
+    features: [
+      'User research and personas',
+      'Wireframing and prototyping',
+      'Usability testing',
+      'Interaction design',
+      'Accessibility compliance (WCAG)'
+    ],
+    caseStudy: 'Redesigned a client\'s SaaS platform interface, reducing customer support tickets by 40% and increasing user retention.',
+    detailId: 'ui-ux-design'
   },
   {
     icon: 'rocket',
     title: 'Performance Optimization',
-    description: 'Improving website speed and performance to enhance user experience and search engine rankings.',
+    description: 'Optimizing application performance to deliver lightning-fast experiences. We fine-tune every aspect of your site to ensure optimal loading times, responsiveness, and overall user experience.',
+    technologies: ['Web Vitals', 'Lighthouse', 'Webpack', 'Vite', 'Service Workers'],
+    features: [
+      'Core Web Vitals optimization',
+      'Asset compression and minification',
+      'Lazy loading and code splitting',
+      'Image optimization',
+      'Caching strategies implementation'
+    ],
+    caseStudy: 'Improved a client\'s site performance score from 45 to 95 on Lighthouse, resulting in 30% more organic traffic.',
+    detailId: 'performance-optimization'
   },
 ];
 
