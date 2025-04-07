@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import ClientAccountForm from '@/components/ClientAccountForm';
 import type { Client, Project, Contact } from '@shared/schema';
 
 const AdminPage: React.FC = () => {
@@ -73,6 +74,7 @@ const AdminPage: React.FC = () => {
             <TabsTrigger value="clients">Client Submissions</TabsTrigger>
             <TabsTrigger value="projects">Projects</TabsTrigger>
             <TabsTrigger value="contacts">Contact Messages</TabsTrigger>
+            <TabsTrigger value="accounts">Client Accounts</TabsTrigger>
           </TabsList>
           
           <TabsContent value="clients">
@@ -206,6 +208,54 @@ const AdminPage: React.FC = () => {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+          
+          <TabsContent value="accounts">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div>
+                <ClientAccountForm clients={clients || []} />
+              </div>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>Client Accounts</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {clients && clients.length > 0 ? (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Client Name</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Account Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {clients.map((client) => (
+                          <TableRow key={client.id}>
+                            <TableCell className="font-medium">{client.fullName}</TableCell>
+                            <TableCell>{client.email}</TableCell>
+                            <TableCell>
+                              {client.userId ? (
+                                <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                  Has Account
+                                </span>
+                              ) : (
+                                <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                  No Account
+                                </span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <p>No clients available.</p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
