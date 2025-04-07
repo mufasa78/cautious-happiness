@@ -21,7 +21,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const apiRouter = express.Router();
   
   // Authentication routes
-  apiRouter.post("/register", register);
+  // Remove public registration
+  // apiRouter.post("/register", register);
   apiRouter.post("/login", login);
   apiRouter.get("/me", authenticateJWT, getCurrentUser);
   
