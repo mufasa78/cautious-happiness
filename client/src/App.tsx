@@ -9,6 +9,7 @@ import HomePage from "@/pages/HomePage";
 import AdminPage from "@/pages/AdminPage";
 import ClientSubmissionDetail from "@/pages/ClientSubmissionDetail";
 import ClientDashboard from "@/pages/ClientDashboard";
+import ClientLogin from "@/pages/ClientLogin";
 import AuthPage from "@/pages/auth-page";
 import NotFound from "@/pages/not-found";
 
@@ -17,6 +18,7 @@ function Router() {
     <Switch>
       <Route path="/" component={HomePage} />
       <Route path="/auth" component={AuthPage} />
+      <Route path="/client/login" component={ClientLogin} />
       <ProtectedRoute path="/admin" component={AdminPage} />
       <ProtectedRoute path="/admin/clients/:id" component={ClientSubmissionDetail} />
       <ProtectedRoute path="/client/dashboard" component={ClientDashboard} />

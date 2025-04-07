@@ -1,9 +1,16 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { CodeIcon, LogIn, LogOut, Settings } from 'lucide-react';
+import { CodeIcon, LogIn, LogOut, Settings, User, Users } from 'lucide-react';
 import { MobileMenu } from './ui/mobile-menu';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from './ui/button';
+import { 
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator
+} from './ui/dropdown-menu';
 
 const Header: React.FC = () => {
   const [, setLocation] = useLocation();
@@ -30,8 +37,12 @@ const Header: React.FC = () => {
     }, 100);
   };
   
-  const handleLogin = () => {
+  const handleAdminLogin = () => {
     setLocation('/auth');
+  };
+  
+  const handleClientLogin = () => {
+    setLocation('/client/login');
   };
   
   const handleLogout = () => {
@@ -121,15 +132,29 @@ const Header: React.FC = () => {
               </Button>
             </div>
           ) : (
-            <Button 
-              size="sm"
-              onClick={handleLogin}
-              variant="outline" 
-              className="flex items-center gap-1 font-medium"
-            >
-              <LogIn size={16} />
-              Login
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  size="sm"
+                  variant="outline" 
+                  className="flex items-center gap-1 font-medium"
+                >
+                  <LogIn size={16} />
+                  Choose Login
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-48">
+                <DropdownMenuItem onClick={handleClientLogin} className="cursor-pointer">
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Client Login</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleAdminLogin} className="cursor-pointer">
+                  <Users className="mr-2 h-4 w-4" />
+                  <span>Admin Login</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
           
           <button 
@@ -142,7 +167,7 @@ const Header: React.FC = () => {
         
         {/* Mobile Navigation Button */}
         <div className="flex items-center gap-2 md:hidden">
-          {user && (
+          {user ? (
             user.userType === 'admin' ? (
               <Button 
                 size="sm" 
@@ -164,6 +189,30 @@ const Header: React.FC = () => {
                 Dashboard
               </Button>
             )
+          ) : (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  size="sm"
+                  variant="outline" 
+                  className="flex items-center gap-1 font-medium"
+                >
+                  <LogIn size={16} />
+                  Login
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-48">
+                <DropdownMenuItem onClick={handleClientLogin} className="cursor-pointer">
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Client Login</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleAdminLogin} className="cursor-pointer">
+                  <Users className="mr-2 h-4 w-4" />
+                  <span>Admin Login</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
           
           <button 

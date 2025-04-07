@@ -1,9 +1,16 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { LogIn, LogOut } from 'lucide-react';
+import { LogIn, LogOut, User, Users } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useLocation } from 'wouter';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -51,24 +58,60 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onLinkClick }) =
             
             {/* Mobile auth buttons */}
             {!user ? (
-              <Button 
-                onClick={() => setLocation('/auth')}
-                className="flex items-center justify-center gap-2 mt-2"
-                variant="outline"
-              >
-                <LogIn size={18} />
-                Login
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    className="flex items-center justify-center gap-2 mt-2 w-full"
+                    variant="outline"
+                  >
+                    <LogIn size={18} />
+                    Choose Login
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => setLocation('/client/login')} className="cursor-pointer">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Client Login</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setLocation('/auth')} className="cursor-pointer">
+                    <Users className="mr-2 h-4 w-4" />
+                    <span>Admin Login</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
-              <Button 
-                onClick={() => logoutMutation.mutate()}
-                className="flex items-center justify-center gap-2 mt-2"
-                variant="outline"
-                disabled={logoutMutation.isPending}
-              >
-                <LogOut size={18} />
-                {logoutMutation.isPending ? 'Logging out...' : 'Logout'}
-              </Button>
+              <div className="space-y-2">
+                {user.userType === 'admin' ? (
+                  <Button 
+                    onClick={() => setLocation('/admin')}
+                    className="flex items-center justify-center gap-2 w-full"
+                    variant="outline"
+                  >
+                    <Users size={18} />
+                    Admin Panel
+                  </Button>
+                ) : (
+                  <Button 
+                    onClick={() => setLocation('/client/dashboard')}
+                    className="flex items-center justify-center gap-2 w-full"
+                    variant="outline"
+                  >
+                    <User size={18} />
+                    Client Dashboard
+                  </Button>
+                )}
+                
+                <Button 
+                  onClick={() => logoutMutation.mutate()}
+                  className="flex items-center justify-center gap-2 w-full"
+                  variant="outline"
+                  disabled={logoutMutation.isPending}
+                >
+                  <LogOut size={18} />
+                  {logoutMutation.isPending ? 'Logging out...' : 'Logout'}
+                </Button>
+              </div>
             )}
             
             <button 

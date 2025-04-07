@@ -12,6 +12,7 @@ import {
   getCurrentUser, 
   initializeAdminUser 
 } from "./auth";
+import { sendClientAccountNotification } from "./email";
 
 // Custom error handler for Zod validation errors
 function handleValidationError(error: unknown) {
@@ -193,8 +194,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Not authorized to perform this action" });
       }
       
+      // Get client details before registration
+      const { clientId, username, password } = req.body;
+      
+      if (!clientId) {
+        return res.status(400).json({ error: "Client ID is required" });
+      }
+      
+      const client = await storage.getClientById(parseInt(clientId));
+      if (!client) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+      
+      // Store the original request object and response
+      const originalReq = { ...req };
+      
       // Call the register function
       await register(req, res);
+      
+      // If we get here, registration was successful, so update the client record
+      if (client) {
+        try {
+          // Update the client with the new user ID (last created user ID)
+          const clients = await storage.getClients();
+          const users = await Promise.all(clients.map(async c => {
+            if (c.userId) {
+              return await storage.getUser(c.userId);
+            }
+            return undefined;
+          }));
+          
+          const newUser = users.find(u => u?.username === username);
+          
+          if (newUser) {
+            await storage.updateClientUser(client.id, newUser.id);
+            
+            // Send email notification
+            const baseUrl = originalReq.body.baseUrl || `${req.protocol}://${req.get('host')}`;
+            const clientPortalUrl = `${baseUrl}/client-login`;
+            
+            await sendClientAccountNotification(
+              client.email,
+              client.fullName,
+              username,
+              clientPortalUrl
+            );
+          }
+        } catch (emailError) {
+          console.error("Error sending email notification:", emailError);
+          // We don't want to fail the request if email fails
+        }
+      }
     } catch (error) {
       console.error("Client registration error:", error);
       res.status(500).json({ error: "Server error" });

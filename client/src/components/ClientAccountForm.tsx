@@ -42,11 +42,15 @@ const ClientAccountForm: React.FC<ClientAccountFormProps> = ({ clients }) => {
   // Set up mutation for client account creation
   const createClientAccountMutation = useMutation({
     mutationFn: async (data: ClientAccountFormValues) => {
+      // Get the base URL of the application for email links
+      const baseUrl = window.location.origin;
+      
       const res = await apiRequest('POST', '/api/register-client', {
         username: data.username,
         password: data.password,
         userType: 'client',
         clientId: parseInt(data.clientId),
+        baseUrl: baseUrl
       });
       return await res.json();
     },
