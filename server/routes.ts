@@ -1,10 +1,13 @@
-import express, { type Express } from "express";
+import express, { type Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
+import path from "path";
+import fs from "fs";
 import { storage } from "./storage";
 import { clientProjectSchema, insertContactSchema, insertDocumentSchema, insertMessageSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import { ZodError } from "zod";
 import { Octokit } from "octokit";
+import multer from "multer";
 import { 
   authenticateJWT, 
   login, 
@@ -13,6 +16,51 @@ import {
   initializeAdminUser 
 } from "./auth";
 import { sendClientAccountNotification } from "./email";
+
+// Set up file upload directory
+const uploadsDir = path.join(process.cwd(), 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Configure multer for file uploads
+const storage_config = multer.diskStorage({
+  destination: function(req, file, cb) {
+    cb(null, uploadsDir);
+  },
+  filename: function(req, file, cb) {
+    // Create a unique filename with original extension
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, uniqueSuffix + ext);
+  }
+});
+
+const upload = multer({
+  storage: storage_config,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB file size limit
+  },
+  fileFilter: function(req, file, cb) {
+    // Accept common document and image file types
+    const allowedTypes = [
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+      'application/pdf', 'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/plain', 'text/csv'
+    ];
+    
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      // Reject the file but don't throw an error
+      cb(null, false);
+      (req as any).fileValidationError = 'Invalid file type. Only documents and images are allowed.';
+    }
+  }
+});
 
 // Custom error handler for Zod validation errors
 function handleValidationError(error: unknown) {
@@ -253,7 +301,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Document management endpoints
   
-  // Upload document
+  // Upload document (JSON data only)
   apiRouter.post("/documents", authenticateJWT, async (req, res) => {
     try {
       const validatedData = insertDocumentSchema.parse(req.body);
@@ -278,6 +326,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(error instanceof ZodError ? 400 : 500).json({
         success: false,
         message: validationError.message
+      });
+    }
+  });
+  
+  // Upload document with file
+  apiRouter.post("/upload-document", authenticateJWT, upload.single('file'), async (req, res) => {
+    try {
+      // Check for file validation error
+      if ((req as any).fileValidationError) {
+        return res.status(400).json({
+          success: false,
+          message: (req as any).fileValidationError
+        });
+      }
+
+      // Check if file was uploaded
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: "No file uploaded"
+        });
+      }
+      
+      const projectId = parseInt(req.body.projectId);
+      if (isNaN(projectId) || projectId <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Valid project ID is required"
+        });
+      }
+      
+      // Generate file URL based on server path
+      const fileUrl = `/uploads/${req.file.filename}`;
+      const fileName = req.body.fileName || req.file.originalname;
+      const fileType = req.body.fileType || req.file.mimetype;
+      const description = req.body.description || '';
+      
+      // Create document record
+      const documentData = {
+        projectId,
+        fileName,
+        fileType,
+        fileUrl,
+        description: description || null,
+        uploadedBy: req.user!.id,
+        uploadedByType: req.user!.userType || 'client'
+      };
+      
+      const document = await storage.createDocument(documentData);
+      
+      res.status(201).json({
+        success: true,
+        message: "Document uploaded successfully",
+        data: document
+      });
+    } catch (error) {
+      console.error("File upload error:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to upload document";
+      res.status(500).json({
+        success: false,
+        message: errorMessage
       });
     }
   });
@@ -457,6 +566,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register the API router with the /api prefix
   app.use("/api", apiRouter);
+  
+  // Serve uploaded files
+  app.use('/uploads', express.static(uploadsDir));
 
   const httpServer = createServer(app);
 

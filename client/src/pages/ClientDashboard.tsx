@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Link, useLocation } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -6,7 +6,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, FileText, MessageSquare, FileUp, Send } from "lucide-react";
+import { 
+  Loader2, 
+  FileText, 
+  MessageSquare, 
+  Send, 
+  FileUp, 
+  BarChart4,
+  Image as ImageIcon,
+  File,
+  AlertCircle,
+  CheckCircle2,
+  ChevronRight
+} from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -16,6 +28,21 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend
+} from "recharts";
 
 // Type definitions
 interface Project {
@@ -59,8 +86,6 @@ interface Message {
 const documentSchema = z.object({
   projectId: z.number().positive(),
   fileName: z.string().min(1, "Filename is required"),
-  fileType: z.string().min(1, "File type is required"),
-  fileUrl: z.string().url("Must be a valid URL"),
   description: z.string().optional(),
 });
 
@@ -69,14 +94,55 @@ const messageSchema = z.object({
   content: z.string().min(1, "Message content is required"),
 });
 
+const fileUploadSchema = z.object({
+  file: z.any().refine((file) => 
+    file instanceof File && file.size <= 5 * 1024 * 1024, {
+    message: "File size must be less than 5MB",
+  }),
+});
+
 type DocumentFormValues = z.infer<typeof documentSchema>;
 type MessageFormValues = z.infer<typeof messageSchema>;
+
+// Project tasks mock data for analytics
+const getProjectTasks = (status: string) => [
+  { name: 'Design', completed: status === 'completed' || status === 'in progress' ? 100 : 0 },
+  { name: 'Frontend', completed: status === 'completed' ? 100 : status === 'in progress' ? 70 : 0 },
+  { name: 'Backend', completed: status === 'completed' ? 100 : status === 'in progress' ? 50 : 0 },
+  { name: 'Testing', completed: status === 'completed' ? 100 : status === 'in progress' ? 30 : 0 },
+  { name: 'Deployment', completed: status === 'completed' ? 100 : 0 },
+];
+
+// Project timeline data based on status
+const getTimelineData = (project: Project) => {
+  if (!project) return [];
+  
+  // Calculate overall progress percentage based on status
+  let progressPercentage = 0;
+  switch(project.status.toLowerCase()) {
+    case 'pending': progressPercentage = 10; break;
+    case 'in progress': progressPercentage = 60; break;
+    case 'completed': progressPercentage = 100; break;
+    case 'on hold': progressPercentage = 40; break;
+    default: progressPercentage = 0;
+  }
+  
+  return [
+    { name: "Progress", value: progressPercentage },
+    { name: "Remaining", value: 100 - progressPercentage },
+  ];
+};
+
+// Colors for progress chart
+const COLORS = ['#0088FE', '#ECEFF1'];
 
 export default function ClientDashboard() {
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [selectedProject, setSelectedProject] = useState<number | null>(null);
+  const [fileUploading, setFileUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch client's projects
   const {
@@ -108,14 +174,12 @@ export default function ClientDashboard() {
     enabled: !!selectedProject,
   });
 
-  // Document upload form
+  // Document form
   const documentForm = useForm<DocumentFormValues>({
     resolver: zodResolver(documentSchema),
     defaultValues: {
       projectId: selectedProject || 0,
       fileName: "",
-      fileType: "",
-      fileUrl: "",
       description: "",
     },
   });
@@ -137,19 +201,32 @@ export default function ClientDashboard() {
     }
   }, [selectedProject, documentForm, messageForm]);
 
-  // Upload document mutation
-  const uploadDocumentMutation = useMutation({
-    mutationFn: async (data: DocumentFormValues) => {
-      const res = await apiRequest("POST", "/api/documents", data);
+  // File upload mutation
+  const uploadFileMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      const res = await fetch('/api/upload-document', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+        },
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Failed to upload file');
+      }
+      
       return await res.json();
     },
     onSuccess: () => {
       toast({
-        title: "Document uploaded",
-        description: "Your document has been successfully uploaded.",
+        title: "File uploaded",
+        description: "Your file has been successfully uploaded.",
       });
       documentForm.reset();
       queryClient.invalidateQueries({ queryKey: [`/api/projects/${selectedProject}/documents`] });
+      setFileUploading(false);
     },
     onError: (error: Error) => {
       toast({
@@ -157,6 +234,7 @@ export default function ClientDashboard() {
         description: error.message,
         variant: "destructive",
       });
+      setFileUploading(false);
     },
   });
 
@@ -208,9 +286,45 @@ export default function ClientDashboard() {
            new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  // Handle document submission
-  const onDocumentSubmit = (data: DocumentFormValues) => {
-    uploadDocumentMutation.mutate(data);
+  // Get file icon based on file type
+  const getFileIcon = (fileType: string) => {
+    if (fileType.includes('image')) {
+      return <ImageIcon className="h-5 w-5" />;
+    } else if (fileType.includes('pdf')) {
+      return <FileText className="h-5 w-5" />;
+    } else {
+      return <File className="h-5 w-5" />;
+    }
+  };
+
+  // Handle file upload
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !selectedProject) return;
+    
+    try {
+      setFileUploading(true);
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('projectId', selectedProject.toString());
+      formData.append('fileName', documentForm.getValues('fileName') || file.name);
+      formData.append('description', documentForm.getValues('description') || '');
+      
+      uploadFileMutation.mutate(formData);
+    } catch (error) {
+      console.error("File upload error:", error);
+      setFileUploading(false);
+      toast({
+        title: "Upload failed",
+        description: error instanceof Error ? error.message : "Failed to upload file",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Trigger file input click
+  const triggerFileUpload = () => {
+    fileInputRef.current?.click();
   };
 
   // Handle message submission
@@ -231,6 +345,8 @@ export default function ClientDashboard() {
     setLocation("/auth");
     return null;
   }
+
+  const currentProject = projects?.find(p => p.id === selectedProject);
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-6xl">
@@ -312,6 +428,9 @@ export default function ClientDashboard() {
                 <Tabs defaultValue="details">
                   <TabsList className="w-full">
                     <TabsTrigger value="details">Details</TabsTrigger>
+                    <TabsTrigger value="analytics">
+                      Analytics <BarChart4 className="ml-1 h-4 w-4" />
+                    </TabsTrigger>
                     <TabsTrigger value="documents">
                       Documents <FileText className="ml-1 h-4 w-4" />
                     </TabsTrigger>
@@ -392,12 +511,122 @@ export default function ClientDashboard() {
                     )}
                   </TabsContent>
 
+                  {/* Analytics Tab */}
+                  <TabsContent value="analytics" className="mt-4">
+                    {projectsLoading ? (
+                      <div className="flex justify-center p-4">
+                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : currentProject ? (
+                      <div className="space-y-6">
+                        <div>
+                          <h3 className="text-lg font-medium mb-4">Project Progress</h3>
+                          <div className="bg-muted p-4 rounded-md">
+                            <div className="md:grid md:grid-cols-2 gap-6">
+                              <div>
+                                <h4 className="text-md font-medium mb-2">Overall Completion</h4>
+                                <ResponsiveContainer width="100%" height={200}>
+                                  <PieChart>
+                                    <Pie
+                                      data={getTimelineData(currentProject)}
+                                      cx="50%"
+                                      cy="50%"
+                                      labelLine={false}
+                                      outerRadius={80}
+                                      fill="#8884d8"
+                                      dataKey="value"
+                                    >
+                                      {getTimelineData(currentProject).map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                      ))}
+                                    </Pie>
+                                    <Tooltip formatter={(value) => `${value}%`} />
+                                    <Legend />
+                                  </PieChart>
+                                </ResponsiveContainer>
+                              </div>
+                              <div>
+                                <h4 className="text-md font-medium mb-2">Task Breakdown</h4>
+                                <ResponsiveContainer width="100%" height={200}>
+                                  <BarChart
+                                    data={getProjectTasks(currentProject.status)}
+                                    layout="vertical"
+                                    margin={{ top: 5, right: 30, left: 30, bottom: 5 }}
+                                  >
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis type="number" domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
+                                    <YAxis dataKey="name" type="category" />
+                                    <Tooltip formatter={(value) => `${value}%`} />
+                                    <Bar dataKey="completed" fill="#0088FE" />
+                                  </BarChart>
+                                </ResponsiveContainer>
+                              </div>
+                            </div>
+                            
+                            <div className="mt-6">
+                              <h4 className="text-md font-medium mb-2">Project Timeline</h4>
+                              <div className="space-y-2">
+                                <div>
+                                  <div className="flex justify-between text-sm mb-1">
+                                    <span>Project Started</span>
+                                    <span>Project Completion</span>
+                                  </div>
+                                  <Progress value={
+                                    currentProject.status === 'completed' ? 100 :
+                                    currentProject.status === 'in progress' ? 60 :
+                                    currentProject.status === 'on hold' ? 40 : 10
+                                  } />
+                                </div>
+                                
+                                <div className="flex justify-between text-xs text-muted-foreground">
+                                  <span>{currentProject.startDate || 'Not started'}</span>
+                                  <span>{currentProject.deadline || 'No deadline set'}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <h3 className="text-lg font-medium mb-2">Project Status</h3>
+                          <Alert className={
+                            currentProject.status === 'completed' ? "border-green-500" :
+                            currentProject.status === 'in progress' ? "border-blue-500" :
+                            currentProject.status === 'on hold' ? "border-red-500" : "border-yellow-500"
+                          }>
+                            {currentProject.status === 'completed' ? (
+                              <CheckCircle2 className="h-4 w-4 text-green-500" />
+                            ) : currentProject.status === 'on hold' ? (
+                              <AlertCircle className="h-4 w-4 text-red-500" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4" />
+                            )}
+                            <AlertTitle>
+                              {currentProject.status === 'completed' ? "Project Completed" :
+                               currentProject.status === 'in progress' ? "Project In Progress" :
+                               currentProject.status === 'on hold' ? "Project On Hold" : "Project Pending"}
+                            </AlertTitle>
+                            <AlertDescription>
+                              {currentProject.status === 'completed' ? "Your project has been successfully completed." :
+                               currentProject.status === 'in progress' ? "Your project is currently being worked on." :
+                               currentProject.status === 'on hold' ? "Your project is temporarily on hold." : "Your project is awaiting commencement."}
+                            </AlertDescription>
+                          </Alert>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center p-4 bg-muted rounded-md">
+                        <p className="text-muted-foreground">Select a project to view analytics</p>
+                      </div>
+                    )}
+                  </TabsContent>
+
                   {/* Documents Tab */}
                   <TabsContent value="documents" className="mt-4 space-y-4">
                     <div className="bg-muted p-4 rounded-md space-y-4">
                       <h3 className="text-lg font-medium">Upload New Document</h3>
                       <Form {...documentForm}>
-                        <form onSubmit={documentForm.handleSubmit(onDocumentSubmit)} className="space-y-4">
+                        <form className="space-y-4">
                           <FormField
                             control={documentForm.control}
                             name="fileName"
@@ -412,36 +641,6 @@ export default function ClientDashboard() {
                             )}
                           />
                           
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField
-                              control={documentForm.control}
-                              name="fileType"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>File Type</FormLabel>
-                                  <FormControl>
-                                    <Input placeholder="e.g. PDF, DOCX, JPG" {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            
-                            <FormField
-                              control={documentForm.control}
-                              name="fileUrl"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>File URL</FormLabel>
-                                  <FormControl>
-                                    <Input placeholder="https://..." {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-                          
                           <FormField
                             control={documentForm.control}
                             name="description"
@@ -450,10 +649,9 @@ export default function ClientDashboard() {
                                 <FormLabel>Description (Optional)</FormLabel>
                                 <FormControl>
                                   <Textarea 
-                                    placeholder="Add any relevant details about this document"
-                                    className="min-h-[80px]"
+                                    placeholder="Brief description of the document" 
+                                    className="resize-none" 
                                     {...field} 
-                                    value={field.value || ''}
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -461,160 +659,160 @@ export default function ClientDashboard() {
                             )}
                           />
                           
-                          <Button 
-                            type="submit" 
-                            className="w-full"
-                            disabled={uploadDocumentMutation.isPending}
-                          >
-                            {uploadDocumentMutation.isPending ? (
-                              <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Uploading...
-                              </>
-                            ) : (
-                              <>
-                                <FileUp className="mr-2 h-4 w-4" />
-                                Upload Document
-                              </>
-                            )}
-                          </Button>
+                          <div>
+                            <input
+                              type="file"
+                              ref={fileInputRef}
+                              onChange={handleFileUpload}
+                              className="hidden"
+                              accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.jpg,.jpeg,.png,.gif"
+                            />
+                            <Button 
+                              type="button" 
+                              onClick={triggerFileUpload}
+                              disabled={fileUploading || !selectedProject}
+                              className="w-full"
+                            >
+                              {fileUploading ? (
+                                <>
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  Uploading...
+                                </>
+                              ) : (
+                                <>
+                                  <FileUp className="mr-2 h-4 w-4" />
+                                  Select File to Upload
+                                </>
+                              )}
+                            </Button>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Supported formats: PDF, DOC, DOCX, XLS, XLSX, TXT, JPG, JPEG, PNG, GIF. Max size: 5MB.
+                            </p>
+                          </div>
                         </form>
                       </Form>
                     </div>
-                    
-                    <div>
-                      <h3 className="text-lg font-medium mb-2">Project Documents</h3>
-                      {documentsLoading ? (
-                        <div className="flex justify-center p-4">
-                          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                        </div>
-                      ) : !documents?.data || documents.data.length === 0 ? (
-                        <div className="text-center p-4 bg-muted rounded-md">
-                          <p className="text-muted-foreground">No documents uploaded yet</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-3">
-                          {documents.data.map((doc) => (
-                            <div key={doc.id} className="p-3 border rounded-md">
-                              <div className="flex justify-between items-start">
-                                <div>
-                                  <div className="flex items-center">
-                                    <FileText className="h-4 w-4 mr-2 text-muted-foreground" />
+
+                    <h3 className="text-lg font-medium">Project Documents</h3>
+                    {documentsLoading ? (
+                      <div className="flex justify-center p-4">
+                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : !documents?.data || documents.data.length === 0 ? (
+                      <div className="text-center p-4 bg-muted rounded-md">
+                        <p className="text-muted-foreground">No documents have been uploaded for this project</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {documents.data.map((doc) => (
+                          <div key={doc.id} className="p-3 border rounded-md hover:bg-accent transition-colors">
+                            <div className="flex items-start gap-3">
+                              <div className="mt-1">
+                                {getFileIcon(doc.fileType)}
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex justify-between items-start">
+                                  <div>
                                     <h4 className="font-medium">{doc.fileName}</h4>
+                                    <p className="text-xs text-muted-foreground">
+                                      Uploaded on {formatDate(doc.createdAt)}
+                                    </p>
+                                    {doc.description && (
+                                      <p className="text-sm mt-1">{doc.description}</p>
+                                    )}
                                   </div>
-                                  <p className="text-sm text-muted-foreground">{doc.fileType}</p>
-                                  {doc.description && (
-                                    <p className="text-sm mt-1">{doc.description}</p>
-                                  )}
-                                  <p className="text-xs text-muted-foreground mt-2">
-                                    Uploaded by {doc.uploadedByType} on {formatDate(doc.createdAt)}
-                                  </p>
+                                  <Button size="sm" variant="ghost" asChild>
+                                    <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer">
+                                      View
+                                    </a>
+                                  </Button>
                                 </div>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
-                                  asChild
-                                >
-                                  <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer">
-                                    View
-                                  </a>
-                                </Button>
                               </div>
                             </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </TabsContent>
 
                   {/* Messages Tab */}
                   <TabsContent value="messages" className="mt-4 space-y-4">
-                    <div className="bg-muted p-4 rounded-md space-y-4">
-                      <h3 className="text-lg font-medium">Send a Message</h3>
-                      <Form {...messageForm}>
-                        <form onSubmit={messageForm.handleSubmit(onMessageSubmit)} className="space-y-4">
-                          <FormField
-                            control={messageForm.control}
-                            name="content"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Message</FormLabel>
-                                <FormControl>
-                                  <Textarea 
-                                    placeholder="Type your message here..."
-                                    className="min-h-[120px]"
-                                    {...field} 
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <Button 
-                            type="submit" 
-                            className="w-full"
-                            disabled={sendMessageMutation.isPending}
-                          >
-                            {sendMessageMutation.isPending ? (
-                              <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Sending...
-                              </>
-                            ) : (
-                              <>
-                                <Send className="mr-2 h-4 w-4" />
-                                Send Message
-                              </>
-                            )}
-                          </Button>
-                        </form>
-                      </Form>
-                    </div>
-                    
-                    <div>
-                      <h3 className="text-lg font-medium mb-2">Conversation</h3>
-                      {messagesLoading ? (
-                        <div className="flex justify-center p-4">
-                          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                        </div>
-                      ) : !messages?.data || messages.data.length === 0 ? (
-                        <div className="text-center p-4 bg-muted rounded-md">
-                          <p className="text-muted-foreground">No messages yet</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-3">
-                          {messages.data.map((msg) => (
-                            <div 
-                              key={msg.id} 
-                              className={`p-3 rounded-md ${
-                                msg.senderType === 'client' 
-                                  ? 'bg-primary/10 ml-8' 
-                                  : 'bg-muted mr-8'
-                              }`}
-                            >
-                              <div className="flex flex-col">
-                                <div className="flex justify-between items-center mb-1">
-                                  <p className="text-sm font-medium">
-                                    {msg.senderType === 'client' ? 'You' : 'Admin'}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {formatDate(msg.createdAt)}
-                                  </p>
-                                </div>
-                                <p>{msg.content}</p>
-                                {msg.senderType !== 'client' && (
-                                  <div className="flex items-center mt-1 self-end">
-                                    <Badge variant="outline" className="text-xs">
-                                      {msg.isRead ? 'Read' : 'Unread'}
-                                    </Badge>
-                                  </div>
-                                )}
-                              </div>
+                    <div className="bg-muted p-4 rounded-md">
+                      <h3 className="text-lg font-medium mb-4">Project Communication</h3>
+                      
+                      <div className="border rounded-md bg-white mb-4 overflow-hidden">
+                        <div className="max-h-64 overflow-y-auto p-4 space-y-4">
+                          {messagesLoading ? (
+                            <div className="flex justify-center p-4">
+                              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                             </div>
-                          ))}
+                          ) : !messages?.data || messages.data.length === 0 ? (
+                            <div className="text-center p-4">
+                              <p className="text-muted-foreground">No messages yet. Start the conversation!</p>
+                            </div>
+                          ) : (
+                            messages.data
+                              .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+                              .map((message) => (
+                                <div 
+                                  key={message.id} 
+                                  className={`flex ${
+                                    message.senderType === 'admin' ? 'justify-start' : 'justify-end'
+                                  }`}
+                                >
+                                  <div 
+                                    className={`max-w-[80%] rounded-lg p-3 ${
+                                      message.senderType === 'admin' 
+                                        ? 'bg-muted text-foreground' 
+                                        : 'bg-primary text-primary-foreground'
+                                    }`}
+                                  >
+                                    <p>{message.content}</p>
+                                    <p className="text-xs mt-1 opacity-70">
+                                      {formatDate(message.createdAt)}
+                                    </p>
+                                  </div>
+                                </div>
+                              ))
+                          )}
                         </div>
-                      )}
+                        
+                        <Separator />
+                        
+                        <Form {...messageForm}>
+                          <form 
+                            onSubmit={messageForm.handleSubmit(onMessageSubmit)} 
+                            className="p-3 flex gap-2"
+                          >
+                            <FormField
+                              control={messageForm.control}
+                              name="content"
+                              render={({ field }) => (
+                                <FormItem className="flex-1">
+                                  <FormControl>
+                                    <Input 
+                                      placeholder="Type your message..." 
+                                      {...field} 
+                                      className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                            <Button 
+                              type="submit" 
+                              size="sm"
+                              disabled={sendMessageMutation.isPending}
+                            >
+                              {sendMessageMutation.isPending ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Send className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </form>
+                        </Form>
+                      </div>
                     </div>
                   </TabsContent>
                 </Tabs>
@@ -622,11 +820,18 @@ export default function ClientDashboard() {
             </Card>
           ) : (
             <Card>
-              <CardContent className="flex flex-col items-center justify-center p-8">
-                <div className="text-center space-y-2">
-                  <h3 className="text-lg font-medium">Select a Project</h3>
-                  <p className="text-muted-foreground">
-                    Choose a project from the list to view details and interact with it
+              <CardHeader>
+                <CardTitle>Select a Project</CardTitle>
+                <CardDescription>
+                  Please select a project from the sidebar to view details and interact with it
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
+                  <FileText className="h-16 w-16 mb-4 opacity-20" />
+                  <h3 className="text-lg font-medium">No Project Selected</h3>
+                  <p className="max-w-md mt-2">
+                    Select a project from the list on the left to view its details, upload documents, and communicate with the team.
                   </p>
                 </div>
               </CardContent>
