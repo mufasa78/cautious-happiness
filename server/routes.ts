@@ -415,7 +415,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Send a message
   apiRouter.post("/messages", authenticateJWT, async (req, res) => {
     try {
-      const validatedData = insertMessageSchema.parse(req.body);
+      // Use the client message schema for validation
+      const { clientMessageSchema } = await import("@shared/schema");
+      const validatedData = clientMessageSchema.parse(req.body);
       
       // Add the sender info to the message
       const messageWithSender = {

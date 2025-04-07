@@ -147,9 +147,16 @@ export const messages = pgTable("messages", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Full message schema
 export const insertMessageSchema = createInsertSchema(messages).omit({
   id: true,
   createdAt: true,
+});
+
+// Partial message schema for client-side submission (senderId and senderType are added by the server)
+export const clientMessageSchema = z.object({
+  projectId: z.number().positive("Project ID is required"),
+  content: z.string().min(1, "Message content is required"),
 });
 
 export type InsertMessage = z.infer<typeof insertMessageSchema>;

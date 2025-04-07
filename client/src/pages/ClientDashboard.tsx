@@ -89,16 +89,20 @@ const documentSchema = z.object({
   description: z.string().optional(),
 });
 
+// Use the same schema as the server side
 const messageSchema = z.object({
-  projectId: z.number().positive(),
+  projectId: z.number().positive("Project ID is required"),
   content: z.string().min(1, "Message content is required"),
 });
 
 const fileUploadSchema = z.object({
-  file: z.any().refine((file) => 
-    file instanceof File && file.size <= 5 * 1024 * 1024, {
-    message: "File size must be less than 5MB",
-  }),
+  file: z.custom<File>()
+    .refine((file) => file instanceof File, {
+      message: "Please upload a valid file",
+    })
+    .refine((file) => file instanceof File && file.size <= 5 * 1024 * 1024, {
+      message: "File size must be less than 5MB",
+    }),
 });
 
 type DocumentFormValues = z.infer<typeof documentSchema>;
