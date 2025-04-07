@@ -5,6 +5,7 @@ import { clientProjectSchema, insertContactSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import { ZodError } from "zod";
 import { Octokit } from "octokit";
+import { authenticateJWT, login, register, getCurrentUser } from "./auth";
 
 // Custom error handler for Zod validation errors
 function handleValidationError(error: unknown) {
@@ -18,6 +19,11 @@ function handleValidationError(error: unknown) {
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes
   const apiRouter = express.Router();
+  
+  // Authentication routes
+  apiRouter.post("/register", register);
+  apiRouter.post("/login", login);
+  apiRouter.get("/me", authenticateJWT, getCurrentUser);
   
   // Client onboarding submission endpoint
   apiRouter.post("/client-onboarding", async (req, res) => {
@@ -61,10 +67,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Admin endpoints (would typically require authentication)
+  // Admin endpoints - protected by JWT authentication
   
   // Get all client submissions
-  apiRouter.get("/admin/clients", async (req, res) => {
+  apiRouter.get("/admin/clients", authenticateJWT, async (req, res) => {
     try {
       const clients = await storage.getClients();
       res.json(clients);
@@ -78,7 +84,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get client details with projects
-  apiRouter.get("/admin/clients/:id", async (req, res) => {
+  apiRouter.get("/admin/clients/:id", authenticateJWT, async (req, res) => {
     try {
       const clientId = parseInt(req.params.id);
       const client = await storage.getClientById(clientId);
@@ -106,7 +112,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get all projects
-  apiRouter.get("/admin/projects", async (req, res) => {
+  apiRouter.get("/admin/projects", authenticateJWT, async (req, res) => {
     try {
       const projects = await storage.getProjects();
       res.json(projects);
@@ -120,7 +126,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Update project status
-  apiRouter.patch("/admin/projects/:id/status", async (req, res) => {
+  apiRouter.patch("/admin/projects/:id/status", authenticateJWT, async (req, res) => {
     try {
       const projectId = parseInt(req.params.id);
       const { status } = req.body;
@@ -156,7 +162,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get all contact submissions
-  apiRouter.get("/admin/contacts", async (req, res) => {
+  apiRouter.get("/admin/contacts", authenticateJWT, async (req, res) => {
     try {
       const contacts = await storage.getContacts();
       res.json(contacts);

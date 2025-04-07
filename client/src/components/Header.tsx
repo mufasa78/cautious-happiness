@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { CodeIcon } from 'lucide-react';
+import { CodeIcon, LogIn, LogOut, Settings } from 'lucide-react';
 import { MobileMenu } from './ui/mobile-menu';
+import { useAuth } from '@/hooks/use-auth';
+import { Button } from './ui/button';
 
 const Header: React.FC = () => {
   const [, setLocation] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, logoutMutation } = useAuth();
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
@@ -26,6 +29,18 @@ const Header: React.FC = () => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }, 100);
   };
+  
+  const handleLogin = () => {
+    setLocation('/auth');
+  };
+  
+  const handleLogout = () => {
+    logoutMutation.mutate();
+  };
+  
+  const handleAdminPanel = () => {
+    setLocation('/admin');
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-white shadow-md">
@@ -40,7 +55,7 @@ const Header: React.FC = () => {
         </a>
         
         {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center space-x-8">
+        <div className="hidden md:flex items-center space-x-6">
           <button 
             onClick={() => scrollToSection('about')} 
             className="font-medium hover:text-primary transition"
@@ -65,6 +80,42 @@ const Header: React.FC = () => {
           >
             Contact
           </button>
+          
+          {/* Auth navigation section */}
+          {user ? (
+            <div className="flex items-center gap-3">
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={handleAdminPanel}
+                className="flex items-center gap-1 font-medium"
+              >
+                <Settings size={16} />
+                Admin
+              </Button>
+              <Button 
+                size="sm"
+                variant="ghost" 
+                onClick={handleLogout}
+                className="flex items-center gap-1 font-medium"
+                disabled={logoutMutation.isPending}
+              >
+                <LogOut size={16} />
+                {logoutMutation.isPending ? 'Logging out...' : 'Logout'}
+              </Button>
+            </div>
+          ) : (
+            <Button 
+              size="sm"
+              onClick={handleLogin}
+              variant="outline" 
+              className="flex items-center gap-1 font-medium"
+            >
+              <LogIn size={16} />
+              Login
+            </Button>
+          )}
+          
           <button 
             onClick={() => scrollToSection('hire')} 
             className="bg-primary text-white px-5 py-2 rounded-lg font-medium hover:bg-blue-600 transition"
@@ -74,20 +125,34 @@ const Header: React.FC = () => {
         </div>
         
         {/* Mobile Navigation Button */}
-        <button 
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
-          className="md:hidden text-dark"
-        >
-          {mobileMenuOpen ? (
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
+        <div className="flex items-center gap-2 md:hidden">
+          {user && (
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={handleAdminPanel}
+              className="flex items-center gap-1 font-medium"
+            >
+              <Settings size={16} />
+              Admin
+            </Button>
           )}
-        </button>
+          
+          <button 
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
+            className="text-dark"
+          >
+            {mobileMenuOpen ? (
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            )}
+          </button>
+        </div>
       </nav>
       
       {/* Mobile Navigation Menu */}
