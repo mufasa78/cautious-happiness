@@ -41,6 +41,10 @@ const Header: React.FC = () => {
   const handleAdminPanel = () => {
     setLocation('/admin');
   };
+  
+  const handleClientDashboard = () => {
+    setLocation('/client/dashboard');
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-white shadow-md">
@@ -84,15 +88,27 @@ const Header: React.FC = () => {
           {/* Auth navigation section */}
           {user ? (
             <div className="flex items-center gap-3">
-              <Button 
-                size="sm" 
-                variant="outline" 
-                onClick={handleAdminPanel}
-                className="flex items-center gap-1 font-medium"
-              >
-                <Settings size={16} />
-                Admin
-              </Button>
+              {user.userType === 'admin' ? (
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={handleAdminPanel}
+                  className="flex items-center gap-1 font-medium"
+                >
+                  <Settings size={16} />
+                  Admin
+                </Button>
+              ) : (
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={handleClientDashboard}
+                  className="flex items-center gap-1 font-medium"
+                >
+                  <Settings size={16} />
+                  Dashboard
+                </Button>
+              )}
               <Button 
                 size="sm"
                 variant="ghost" 
@@ -127,15 +143,27 @@ const Header: React.FC = () => {
         {/* Mobile Navigation Button */}
         <div className="flex items-center gap-2 md:hidden">
           {user && (
-            <Button 
-              size="sm" 
-              variant="outline" 
-              onClick={handleAdminPanel}
-              className="flex items-center gap-1 font-medium"
-            >
-              <Settings size={16} />
-              Admin
-            </Button>
+            user.userType === 'admin' ? (
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={handleAdminPanel}
+                className="flex items-center gap-1 font-medium"
+              >
+                <Settings size={16} />
+                Admin
+              </Button>
+            ) : (
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={handleClientDashboard}
+                className="flex items-center gap-1 font-medium"
+              >
+                <Settings size={16} />
+                Dashboard
+              </Button>
+            )
           )}
           
           <button 

@@ -4,6 +4,10 @@ import { compareSync, hashSync } from "bcryptjs";
 import { storage } from "./storage";
 import { InsertUser, User } from "@shared/schema";
 
+// Admin credentials
+const ADMIN_USERNAME = "Mufasa";
+const ADMIN_PASSWORD = "$Paxful90210";
+
 // Secret key for JWT signing
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
 const SALT_ROUNDS = 10;
@@ -12,7 +16,8 @@ const SALT_ROUNDS = 10;
 export function generateToken(user: User): string {
   const payload = {
     id: user.id,
-    username: user.username
+    username: user.username,
+    userType: user.userType
   };
   
   return jwt.sign(payload, JWT_SECRET, {
@@ -45,7 +50,7 @@ export function authenticateJWT(req: Request, res: Response, next: NextFunction)
   }
   
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { id: number, username: string };
+    const decoded = jwt.verify(token, JWT_SECRET) as { id: number, username: string, userType: string };
     req.user = decoded;
     next();
   } catch (err) {
@@ -56,7 +61,7 @@ export function authenticateJWT(req: Request, res: Response, next: NextFunction)
 // Route handlers
 export async function register(req: Request, res: Response) {
   try {
-    const { username, password } = req.body;
+    const { username, password, userType = 'client', clientId } = req.body;
     
     // Check if username already exists
     const existingUser = await storage.getUserByUsername(username);
@@ -68,10 +73,16 @@ export async function register(req: Request, res: Response) {
     const hashedPassword = hashPassword(password);
     const userData: InsertUser = {
       username,
-      password: hashedPassword
+      password: hashedPassword,
+      userType
     };
     
     const newUser = await storage.createUser(userData);
+    
+    // If this is a client user, update the client record with the user ID
+    if (userType === 'client' && clientId) {
+      await storage.updateClientUser(clientId, newUser.id);
+    }
     
     // Generate token
     const token = generateToken(newUser);
@@ -152,7 +163,33 @@ declare global {
       user?: {
         id: number;
         username: string;
+        userType?: string;
       };
     }
+  }
+}
+
+// Check if admin user exists and create it if not
+export async function initializeAdminUser() {
+  try {
+    const adminUser = await storage.getUserByUsername(ADMIN_USERNAME);
+    
+    if (!adminUser) {
+      console.log("Creating admin user...");
+      const hashedPassword = hashPassword(ADMIN_PASSWORD);
+      
+      const adminData: InsertUser = {
+        username: ADMIN_USERNAME,
+        password: hashedPassword,
+        userType: "admin"
+      };
+      
+      await storage.createUser(adminData);
+      console.log("Admin user created successfully");
+    } else {
+      console.log("Admin user already exists");
+    }
+  } catch (error) {
+    console.error("Error initializing admin user:", error);
   }
 }

@@ -1,11 +1,17 @@
 import express, { type Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { clientProjectSchema, insertContactSchema } from "@shared/schema";
+import { clientProjectSchema, insertContactSchema, insertDocumentSchema, insertMessageSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import { ZodError } from "zod";
 import { Octokit } from "octokit";
-import { authenticateJWT, login, register, getCurrentUser } from "./auth";
+import { 
+  authenticateJWT, 
+  login, 
+  register, 
+  getCurrentUser, 
+  initializeAdminUser 
+} from "./auth";
 
 // Custom error handler for Zod validation errors
 function handleValidationError(error: unknown) {
@@ -17,6 +23,9 @@ function handleValidationError(error: unknown) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Initialize admin user
+  await initializeAdminUser();
+  
   // API routes
   const apiRouter = express.Router();
   
@@ -176,6 +185,184 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Client registration - for creating accounts for existing clients
+  apiRouter.post("/register-client", authenticateJWT, async (req, res) => {
+    try {
+      // Only admin can register clients
+      if (req.user?.userType !== 'admin') {
+        return res.status(403).json({ error: "Not authorized to perform this action" });
+      }
+      
+      // Call the register function
+      await register(req, res);
+    } catch (error) {
+      console.error("Client registration error:", error);
+      res.status(500).json({ error: "Server error" });
+    }
+  });
+
+  // Document management endpoints
+  
+  // Upload document
+  apiRouter.post("/documents", authenticateJWT, async (req, res) => {
+    try {
+      const validatedData = insertDocumentSchema.parse(req.body);
+      
+      // Add the user info to the document
+      const documentWithUser = {
+        ...validatedData,
+        uploadedBy: req.user!.id,
+        uploadedByType: req.user!.userType || 'client'
+      };
+      
+      const document = await storage.createDocument(documentWithUser);
+      
+      res.status(201).json({
+        success: true,
+        message: "Document uploaded successfully",
+        data: document
+      });
+    } catch (error) {
+      const validationError = handleValidationError(error);
+      
+      res.status(error instanceof ZodError ? 400 : 500).json({
+        success: false,
+        message: validationError.message
+      });
+    }
+  });
+  
+  // Get documents for a project
+  apiRouter.get("/projects/:projectId/documents", authenticateJWT, async (req, res) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      const documents = await storage.getDocumentsByProjectId(projectId);
+      
+      res.json({
+        success: true,
+        data: documents
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to retrieve documents";
+      res.status(500).json({
+        success: false,
+        message: errorMessage
+      });
+    }
+  });
+  
+  // Messaging endpoints
+  
+  // Send a message
+  apiRouter.post("/messages", authenticateJWT, async (req, res) => {
+    try {
+      const validatedData = insertMessageSchema.parse(req.body);
+      
+      // Add the sender info to the message
+      const messageWithSender = {
+        ...validatedData,
+        senderId: req.user!.id,
+        senderType: req.user!.userType || 'client',
+        isRead: false
+      };
+      
+      const message = await storage.createMessage(messageWithSender);
+      
+      res.status(201).json({
+        success: true,
+        message: "Message sent successfully",
+        data: message
+      });
+    } catch (error) {
+      const validationError = handleValidationError(error);
+      
+      res.status(error instanceof ZodError ? 400 : 500).json({
+        success: false,
+        message: validationError.message
+      });
+    }
+  });
+  
+  // Get messages for a project
+  apiRouter.get("/projects/:projectId/messages", authenticateJWT, async (req, res) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      const messages = await storage.getMessagesByProjectId(projectId);
+      
+      res.json({
+        success: true,
+        data: messages
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to retrieve messages";
+      res.status(500).json({
+        success: false,
+        message: errorMessage
+      });
+    }
+  });
+  
+  // Mark message as read
+  apiRouter.patch("/messages/:id/read", authenticateJWT, async (req, res) => {
+    try {
+      const messageId = parseInt(req.params.id);
+      const updatedMessage = await storage.markMessageAsRead(messageId);
+      
+      if (!updatedMessage) {
+        return res.status(404).json({
+          success: false,
+          message: "Message not found"
+        });
+      }
+      
+      res.json({
+        success: true,
+        message: "Message marked as read",
+        data: updatedMessage
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to mark message as read";
+      res.status(500).json({
+        success: false,
+        message: errorMessage
+      });
+    }
+  });
+  
+  // Get projects for client
+  apiRouter.get("/projects", authenticateJWT, async (req, res) => {
+    try {
+      let projects;
+      
+      // If user is admin, return all projects
+      if (req.user?.userType === 'admin') {
+        projects = await storage.getProjects();
+      } else {
+        // For client users, only return projects associated with their client record
+        // We need to find the client record based on the user id
+        const clients = await storage.getClients();
+        const clientRecord = clients.find(client => client.userId === req.user?.id);
+        
+        if (!clientRecord) {
+          return res.status(404).json({
+            success: false,
+            message: "No client record found for this user"
+          });
+        }
+        
+        projects = await storage.getProjectsByClientId(clientRecord.id);
+      }
+      
+      res.json(projects);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to retrieve projects";
+      res.status(500).json({
+        success: false,
+        message: errorMessage
+      });
+    }
+  });
+
   // GitHub API integration - fetch repositories from mufasa78
   apiRouter.get("/github/repos", async (req, res) => {
     try {

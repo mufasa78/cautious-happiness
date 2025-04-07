@@ -1,16 +1,20 @@
 import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { relations } from "drizzle-orm";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  userType: text("user_type").default("client").notNull(), // 'admin' or 'client'
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -19,6 +23,7 @@ export type User = typeof users.$inferSelect;
 // Client schema for storing client project requests
 export const clients = pgTable("clients", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id"), // Link to users table (optional initially, updated later)
   fullName: text("full_name").notNull(),
   email: text("email").notNull(),
   phone: text("phone").notNull(),
@@ -86,6 +91,10 @@ export const clientProjectSchema = z.object({
   company: z.string().optional(),
   address: z.string().optional(),
   
+  // Account creation
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  
   // Project Details
   projectType: z.string().min(1, "Project type is required"),
   description: z.string().min(10, "Project description is required"),
@@ -105,3 +114,96 @@ export const clientProjectSchema = z.object({
 });
 
 export type ClientProjectSubmission = z.infer<typeof clientProjectSchema>;
+
+// Documents/files shared between client and admin
+export const documents = pgTable("documents", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").notNull(),
+  fileName: text("file_name").notNull(),
+  fileType: text("file_type").notNull(),
+  fileUrl: text("file_url").notNull(),
+  uploadedBy: integer("uploaded_by").notNull(), // User ID who uploaded
+  uploadedByType: text("uploaded_by_type").notNull(), // "admin" or "client"
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertDocumentSchema = createInsertSchema(documents).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertDocument = z.infer<typeof insertDocumentSchema>;
+export type Document = typeof documents.$inferSelect;
+
+// Messages between client and admin
+export const messages = pgTable("messages", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").notNull(),
+  senderId: integer("sender_id").notNull(), // User ID
+  senderType: text("sender_type").notNull(), // "admin" or "client"
+  content: text("content").notNull(),
+  isRead: boolean("is_read").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertMessageSchema = createInsertSchema(messages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
+export type Message = typeof messages.$inferSelect;
+
+// Define relationships between tables
+
+// User relations
+export const usersRelations = relations(users, ({ one }) => ({
+  client: one(clients, {
+    fields: [users.id],
+    references: [clients.userId],
+  }),
+}));
+
+// Client relations
+export const clientsRelations = relations(clients, ({ one, many }) => ({
+  user: one(users, {
+    fields: [clients.userId],
+    references: [users.id],
+  }),
+  projects: many(projects),
+}));
+
+// Project relations
+export const projectsRelations = relations(projects, ({ one, many }) => ({
+  client: one(clients, {
+    fields: [projects.clientId],
+    references: [clients.id],
+  }),
+  documents: many(documents),
+  messages: many(messages),
+}));
+
+// Document relations
+export const documentsRelations = relations(documents, ({ one }) => ({
+  project: one(projects, {
+    fields: [documents.projectId],
+    references: [projects.id],
+  }),
+  uploader: one(users, {
+    fields: [documents.uploadedBy],
+    references: [users.id],
+  }),
+}));
+
+// Message relations
+export const messagesRelations = relations(messages, ({ one }) => ({
+  project: one(projects, {
+    fields: [messages.projectId],
+    references: [projects.id],
+  }),
+  sender: one(users, {
+    fields: [messages.senderId],
+    references: [users.id],
+  }),
+}));

@@ -3,6 +3,8 @@ import {
   clients, type Client, type InsertClient,
   projects, type Project, type InsertProject,
   contacts, type Contact, type InsertContact,
+  documents, type Document, type InsertDocument,
+  messages, type Message, type InsertMessage,
   type ClientProjectSubmission
 } from "@shared/schema";
 import { db } from "./db";
@@ -21,6 +23,7 @@ export interface IStorage {
   createClientWithProject(submission: ClientProjectSubmission): Promise<{client: Client, project: Project}>;
   getClients(): Promise<Client[]>;
   getClientById(id: number): Promise<Client | undefined>;
+  updateClientUser(clientId: number, userId: number): Promise<Client | undefined>;
   
   // Project methods
   getProjects(): Promise<Project[]>;
@@ -31,6 +34,15 @@ export interface IStorage {
   // Contact form submissions
   createContact(contact: InsertContact): Promise<Contact>;
   getContacts(): Promise<Contact[]>;
+  
+  // Document methods
+  createDocument(document: InsertDocument): Promise<Document>;
+  getDocumentsByProjectId(projectId: number): Promise<Document[]>;
+  
+  // Message methods
+  createMessage(message: InsertMessage): Promise<Message>;
+  getMessagesByProjectId(projectId: number): Promise<Message[]>;
+  markMessageAsRead(id: number): Promise<Message | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -38,22 +50,30 @@ export class MemStorage implements IStorage {
   private clients: Map<number, Client>;
   private projects: Map<number, Project>;
   private contacts: Map<number, Contact>;
+  private documents: Map<number, Document>;
+  private messages: Map<number, Message>;
   
   private userId: number;
   private clientId: number;
   private projectId: number;
   private contactId: number;
+  private documentId: number;
+  private messageId: number;
 
   constructor() {
     this.users = new Map();
     this.clients = new Map();
     this.projects = new Map();
     this.contacts = new Map();
+    this.documents = new Map();
+    this.messages = new Map();
     
     this.userId = 1;
     this.clientId = 1;
     this.projectId = 1;
     this.contactId = 1;
+    this.documentId = 1;
+    this.messageId = 1;
   }
 
   // User methods
@@ -69,7 +89,16 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userId++;
-    const user: User = { ...insertUser, id };
+    const now = new Date();
+    
+    const user: User = {
+      ...insertUser,
+      id,
+      userType: insertUser.userType || 'client',
+      isActive: insertUser.isActive !== undefined ? insertUser.isActive : true,
+      createdAt: now
+    };
+    
     this.users.set(id, user);
     return user;
   }
@@ -82,6 +111,7 @@ export class MemStorage implements IStorage {
     
     const client: Client = {
       id: clientId,
+      userId: null,
       fullName: submission.fullName,
       email: submission.email,
       phone: submission.phone,
@@ -121,6 +151,15 @@ export class MemStorage implements IStorage {
   
   async getClientById(id: number): Promise<Client | undefined> {
     return this.clients.get(id);
+  }
+  
+  async updateClientUser(clientId: number, userId: number): Promise<Client | undefined> {
+    const client = this.clients.get(clientId);
+    if (!client) return undefined;
+    
+    const updatedClient = { ...client, userId };
+    this.clients.set(clientId, updatedClient);
+    return updatedClient;
   }
   
   // Project methods
@@ -164,6 +203,59 @@ export class MemStorage implements IStorage {
   
   async getContacts(): Promise<Contact[]> {
     return Array.from(this.contacts.values());
+  }
+  
+  // Document methods
+  async createDocument(insertDocument: InsertDocument): Promise<Document> {
+    const id = this.documentId++;
+    const now = new Date();
+    
+    const document: Document = {
+      ...insertDocument,
+      id,
+      description: insertDocument.description || null,
+      createdAt: now
+    };
+    
+    this.documents.set(id, document);
+    return document;
+  }
+  
+  async getDocumentsByProjectId(projectId: number): Promise<Document[]> {
+    return Array.from(this.documents.values()).filter(
+      document => document.projectId === projectId
+    );
+  }
+  
+  // Message methods
+  async createMessage(insertMessage: InsertMessage): Promise<Message> {
+    const id = this.messageId++;
+    const now = new Date();
+    
+    const message: Message = {
+      ...insertMessage,
+      id,
+      isRead: insertMessage.isRead !== undefined ? insertMessage.isRead : false,
+      createdAt: now
+    };
+    
+    this.messages.set(id, message);
+    return message;
+  }
+  
+  async getMessagesByProjectId(projectId: number): Promise<Message[]> {
+    return Array.from(this.messages.values())
+      .filter(message => message.projectId === projectId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+  
+  async markMessageAsRead(id: number): Promise<Message | undefined> {
+    const message = this.messages.get(id);
+    if (!message) return undefined;
+    
+    const updatedMessage = { ...message, isRead: true };
+    this.messages.set(id, updatedMessage);
+    return updatedMessage;
   }
 }
 
@@ -225,6 +317,16 @@ export class DatabaseStorage implements IStorage {
     return client || undefined;
   }
   
+  async updateClientUser(clientId: number, userId: number): Promise<Client | undefined> {
+    const [updatedClient] = await db
+      .update(clients)
+      .set({ userId })
+      .where(eq(clients.id, clientId))
+      .returning();
+    
+    return updatedClient || undefined;
+  }
+  
   // Project methods
   async getProjects(): Promise<Project[]> {
     return db.select().from(projects).orderBy(desc(projects.createdAt));
@@ -264,6 +366,50 @@ export class DatabaseStorage implements IStorage {
 
   async getContacts(): Promise<Contact[]> {
     return db.select().from(contacts).orderBy(desc(contacts.createdAt));
+  }
+  
+  // Document methods
+  async createDocument(insertDocument: InsertDocument): Promise<Document> {
+    const [document] = await db
+      .insert(documents)
+      .values(insertDocument)
+      .returning();
+    
+    return document;
+  }
+  
+  async getDocumentsByProjectId(projectId: number): Promise<Document[]> {
+    return db.select()
+      .from(documents)
+      .where(eq(documents.projectId, projectId))
+      .orderBy(desc(documents.createdAt));
+  }
+  
+  // Message methods
+  async createMessage(insertMessage: InsertMessage): Promise<Message> {
+    const [message] = await db
+      .insert(messages)
+      .values(insertMessage)
+      .returning();
+    
+    return message;
+  }
+  
+  async getMessagesByProjectId(projectId: number): Promise<Message[]> {
+    return db.select()
+      .from(messages)
+      .where(eq(messages.projectId, projectId))
+      .orderBy(desc(messages.createdAt));
+  }
+  
+  async markMessageAsRead(id: number): Promise<Message | undefined> {
+    const [updatedMessage] = await db
+      .update(messages)
+      .set({ isRead: true })
+      .where(eq(messages.id, id))
+      .returning();
+    
+    return updatedMessage || undefined;
   }
 }
 
