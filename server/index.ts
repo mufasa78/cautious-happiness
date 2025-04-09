@@ -75,9 +75,8 @@ app.use((req, res, next) => {
   // In production (like Vercel), use the PORT environment variable
   // Otherwise, default to port 5000 for local development
   const port = process.env.PORT || 5000;
-  const host = process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost';
 
-  server.listen(port, host, () => {
+  server.listen(port, () => {
     log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${port}`);
   });
 })();

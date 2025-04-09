@@ -26,11 +26,11 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { 
-  PROJECT_TYPES, 
-  PROJECT_FEATURES, 
-  BUDGET_RANGES, 
-  TIMELINE_OPTIONS 
+import {
+  PROJECT_TYPES,
+  PROJECT_FEATURES,
+  BUDGET_RANGES,
+  TIMELINE_OPTIONS
 } from '@/lib/constants';
 
 // Extend the schema for client-side validation
@@ -40,17 +40,21 @@ const clientFormSchema = z.object({
   phone: z.string().min(5, { message: 'Phone number is required' }),
   company: z.string().optional(),
   address: z.string().optional(),
-  
+
+  // Add username and password fields to match the server schema
+  username: z.string().min(3, { message: 'Username must be at least 3 characters' }),
+  password: z.string().min(6, { message: 'Password must be at least 6 characters' }),
+
   projectType: z.string().min(1, { message: 'Project type is required' }),
   description: z.string().min(10, { message: 'Project description is required (min 10 characters)' }),
   features: z.array(z.string()).optional(),
-  
+
   budget: z.string().min(1, { message: 'Budget range is required' }),
   timeline: z.string().min(1, { message: 'Timeline is required' }),
   startDate: z.string().optional(),
   deadline: z.string().optional(),
   additionalRequirements: z.string().optional(),
-  
+
   termsAgreed: z.boolean().refine(val => val === true, {
     message: "You must agree to the terms and conditions"
   })
@@ -62,7 +66,7 @@ const ClientOnboarding: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [formSubmitted, setFormSubmitted] = useState(false);
   const { toast } = useToast();
-  
+
   const form = useForm<OnboardingFormData>({
     resolver: zodResolver(clientFormSchema),
     defaultValues: {
@@ -71,6 +75,8 @@ const ClientOnboarding: React.FC = () => {
       phone: '',
       company: '',
       address: '',
+      username: '',
+      password: '',
       projectType: '',
       description: '',
       features: [],
@@ -84,7 +90,7 @@ const ClientOnboarding: React.FC = () => {
   });
 
   const onboardingMutation = useMutation({
-    mutationFn: (data: ClientProjectSubmission) => 
+    mutationFn: (data: ClientProjectSubmission) =>
       apiRequest('POST', '/api/client-onboarding', data),
     onSuccess: () => {
       setFormSubmitted(true);
@@ -114,7 +120,7 @@ const ClientOnboarding: React.FC = () => {
     };
 
     const currentFields = fieldsToValidate[currentStep as keyof typeof fieldsToValidate] || [];
-    
+
     // Trigger validation only on the fields for the current step
     const isValid = currentFields.every(field => {
       const result = form.trigger(field as any);
@@ -151,7 +157,7 @@ const ClientOnboarding: React.FC = () => {
         <p className="text-gray-600 mb-8">
           Thank you for submitting your project request. I'll review the details and get back to you within 24-48 hours.
         </p>
-        <Button 
+        <Button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           className="bg-primary text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-600 transition"
         >
@@ -170,26 +176,26 @@ const ClientOnboarding: React.FC = () => {
             Let's start your project by gathering some information about your needs.
           </p>
         </div>
-        
+
         <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-8">
           {/* Form Progress Steps */}
           <div className="mb-10">
             <div className="flex justify-between">
               {[1, 2, 3, 4].map(stepNumber => (
-                <div 
+                <div
                   key={stepNumber}
-                  className="w-1/4 text-center" 
+                  className="w-1/4 text-center"
                   data-step={stepNumber}
                 >
-                  <div 
-                    className={`relative mx-auto w-10 h-10 rounded-full 
-                      ${currentStep >= stepNumber ? 'bg-primary text-white' : 'bg-gray-300 text-gray-600'} 
+                  <div
+                    className={`relative mx-auto w-10 h-10 rounded-full
+                      ${currentStep >= stepNumber ? 'bg-primary text-white' : 'bg-gray-300 text-gray-600'}
                       flex items-center justify-center mb-2 z-10`}
                   >
                     <i className={`fas fa-${stepIcons[stepNumber]}`}></i>
                   </div>
-                  <p 
-                    className={`${currentStep >= stepNumber ? 'text-primary' : 'text-gray-500'} 
+                  <p
+                    className={`${currentStep >= stepNumber ? 'text-primary' : 'text-gray-500'}
                       font-medium text-sm`}
                   >
                     {stepNumber === 1 && 'Personal Info'}
@@ -200,22 +206,22 @@ const ClientOnboarding: React.FC = () => {
                 </div>
               ))}
             </div>
-            
+
             <div className="relative mt-2">
               <div className="absolute top-0 left-0 w-full h-1 bg-gray-300"></div>
-              <div 
+              <div
                 className="absolute top-0 left-0 h-1 bg-primary transition-all duration-300"
                 style={{ width: progressWidth }}
               ></div>
             </div>
           </div>
-          
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)}>
               {/* Step 1: Personal Information */}
               <div className={`form-step ${currentStep === 1 ? 'block' : 'hidden'}`}>
                 <h3 className="text-2xl font-bold mb-6">Personal Information</h3>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                   <FormField
                     control={form.control}
@@ -224,8 +230,8 @@ const ClientOnboarding: React.FC = () => {
                       <FormItem>
                         <FormLabel>Full Name *</FormLabel>
                         <FormControl>
-                          <Input 
-                            {...field} 
+                          <Input
+                            {...field}
                             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                           />
                         </FormControl>
@@ -233,7 +239,7 @@ const ClientOnboarding: React.FC = () => {
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="email"
@@ -241,9 +247,9 @@ const ClientOnboarding: React.FC = () => {
                       <FormItem>
                         <FormLabel>Email Address *</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="email" 
-                            {...field} 
+                          <Input
+                            type="email"
+                            {...field}
                             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                           />
                         </FormControl>
@@ -251,7 +257,7 @@ const ClientOnboarding: React.FC = () => {
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="phone"
@@ -259,9 +265,9 @@ const ClientOnboarding: React.FC = () => {
                       <FormItem>
                         <FormLabel>Phone Number *</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="tel" 
-                            {...field} 
+                          <Input
+                            type="tel"
+                            {...field}
                             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                           />
                         </FormControl>
@@ -269,7 +275,7 @@ const ClientOnboarding: React.FC = () => {
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="company"
@@ -277,8 +283,8 @@ const ClientOnboarding: React.FC = () => {
                       <FormItem>
                         <FormLabel>Company Name</FormLabel>
                         <FormControl>
-                          <Input 
-                            {...field} 
+                          <Input
+                            {...field}
                             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                           />
                         </FormControl>
@@ -287,7 +293,44 @@ const ClientOnboarding: React.FC = () => {
                     )}
                   />
                 </div>
-                
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  <FormField
+                    control={form.control}
+                    name="username"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Username *</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Password *</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="password"
+                            {...field}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
                 <FormField
                   control={form.control}
                   name="address"
@@ -295,9 +338,9 @@ const ClientOnboarding: React.FC = () => {
                     <FormItem className="mb-6">
                       <FormLabel>Address</FormLabel>
                       <FormControl>
-                        <Textarea 
-                          rows={3} 
-                          {...field} 
+                        <Textarea
+                          rows={3}
+                          {...field}
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                         />
                       </FormControl>
@@ -305,9 +348,9 @@ const ClientOnboarding: React.FC = () => {
                     </FormItem>
                   )}
                 />
-                
+
                 <div className="flex justify-end">
-                  <Button 
+                  <Button
                     type="button"
                     onClick={goToNextStep}
                     className="bg-primary text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-600 transition"
@@ -316,19 +359,19 @@ const ClientOnboarding: React.FC = () => {
                   </Button>
                 </div>
               </div>
-              
+
               {/* Step 2: Project Details */}
               <div className={`form-step ${currentStep === 2 ? 'block' : 'hidden'}`}>
                 <h3 className="text-2xl font-bold mb-6">Project Details</h3>
-                
+
                 <FormField
                   control={form.control}
                   name="projectType"
                   render={({ field }) => (
                     <FormItem className="mb-6">
                       <FormLabel>Project Type *</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
+                      <Select
+                        onValueChange={field.onChange}
                         defaultValue={field.value}
                       >
                         <FormControl>
@@ -348,7 +391,7 @@ const ClientOnboarding: React.FC = () => {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="description"
@@ -356,9 +399,9 @@ const ClientOnboarding: React.FC = () => {
                     <FormItem className="mb-6">
                       <FormLabel>Project Description *</FormLabel>
                       <FormControl>
-                        <Textarea 
-                          rows={4} 
-                          {...field} 
+                        <Textarea
+                          rows={4}
+                          {...field}
                           placeholder="Please describe your project, goals, and any specific requirements..."
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                         />
@@ -367,7 +410,7 @@ const ClientOnboarding: React.FC = () => {
                     </FormItem>
                   )}
                 />
-                
+
                 <div className="mb-6">
                   <FormLabel>Project Features</FormLabel>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -407,16 +450,16 @@ const ClientOnboarding: React.FC = () => {
                     ))}
                   </div>
                 </div>
-                
+
                 <div className="flex justify-between">
-                  <Button 
+                  <Button
                     type="button"
                     onClick={goToPrevStep}
                     className="bg-gray-200 text-gray-700 px-8 py-3 rounded-lg font-semibold hover:bg-gray-300 transition"
                   >
                     <i className="fas fa-arrow-left mr-2"></i> Previous
                   </Button>
-                  <Button 
+                  <Button
                     type="button"
                     onClick={goToNextStep}
                     className="bg-primary text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-600 transition"
@@ -425,19 +468,19 @@ const ClientOnboarding: React.FC = () => {
                   </Button>
                 </div>
               </div>
-              
+
               {/* Step 3: Budget & Timeline */}
               <div className={`form-step ${currentStep === 3 ? 'block' : 'hidden'}`}>
                 <h3 className="text-2xl font-bold mb-6">Budget & Timeline</h3>
-                
+
                 <FormField
                   control={form.control}
                   name="budget"
                   render={({ field }) => (
                     <FormItem className="mb-6">
                       <FormLabel>Estimated Budget *</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
+                      <Select
+                        onValueChange={field.onChange}
                         defaultValue={field.value}
                       >
                         <FormControl>
@@ -457,15 +500,15 @@ const ClientOnboarding: React.FC = () => {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="timeline"
                   render={({ field }) => (
                     <FormItem className="mb-6">
                       <FormLabel>Expected Timeline *</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
+                      <Select
+                        onValueChange={field.onChange}
                         defaultValue={field.value}
                       >
                         <FormControl>
@@ -485,7 +528,7 @@ const ClientOnboarding: React.FC = () => {
                     </FormItem>
                   )}
                 />
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
@@ -494,9 +537,9 @@ const ClientOnboarding: React.FC = () => {
                       <FormItem className="mb-6">
                         <FormLabel>Preferred Start Date</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="date" 
-                            {...field} 
+                          <Input
+                            type="date"
+                            {...field}
                             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                           />
                         </FormControl>
@@ -504,7 +547,7 @@ const ClientOnboarding: React.FC = () => {
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="deadline"
@@ -512,9 +555,9 @@ const ClientOnboarding: React.FC = () => {
                       <FormItem className="mb-6">
                         <FormLabel>Hard Deadline (if any)</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="date" 
-                            {...field} 
+                          <Input
+                            type="date"
+                            {...field}
                             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                           />
                         </FormControl>
@@ -523,7 +566,7 @@ const ClientOnboarding: React.FC = () => {
                     )}
                   />
                 </div>
-                
+
                 <FormField
                   control={form.control}
                   name="additionalRequirements"
@@ -531,9 +574,9 @@ const ClientOnboarding: React.FC = () => {
                     <FormItem className="mb-6">
                       <FormLabel>Additional Requirements</FormLabel>
                       <FormControl>
-                        <Textarea 
-                          rows={3} 
-                          {...field} 
+                        <Textarea
+                          rows={3}
+                          {...field}
                           placeholder="Any additional information about timeline or budget constraints..."
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                         />
@@ -542,16 +585,16 @@ const ClientOnboarding: React.FC = () => {
                     </FormItem>
                   )}
                 />
-                
+
                 <div className="flex justify-between">
-                  <Button 
+                  <Button
                     type="button"
                     onClick={goToPrevStep}
                     className="bg-gray-200 text-gray-700 px-8 py-3 rounded-lg font-semibold hover:bg-gray-300 transition"
                   >
                     <i className="fas fa-arrow-left mr-2"></i> Previous
                   </Button>
-                  <Button 
+                  <Button
                     type="button"
                     onClick={goToNextStep}
                     className="bg-primary text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-600 transition"
@@ -560,11 +603,11 @@ const ClientOnboarding: React.FC = () => {
                   </Button>
                 </div>
               </div>
-              
+
               {/* Step 4: Review & Submit */}
               <div className={`form-step ${currentStep === 4 ? 'block' : 'hidden'}`}>
                 <h3 className="text-2xl font-bold mb-6">Review & Submit</h3>
-                
+
                 <div className="mb-6 bg-gray-50 p-6 rounded-lg">
                   <h4 className="font-bold text-lg mb-4">Personal Information</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -584,8 +627,16 @@ const ClientOnboarding: React.FC = () => {
                       <p className="text-gray-500 text-sm">Company</p>
                       <p className="font-medium">{form.getValues().company || 'N/A'}</p>
                     </div>
+                    <div>
+                      <p className="text-gray-500 text-sm">Username</p>
+                      <p className="font-medium">{form.getValues().username}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500 text-sm">Password</p>
+                      <p className="font-medium">********</p>
+                    </div>
                   </div>
-                  
+
                   <h4 className="font-bold text-lg mb-4 mt-6">Project Details</h4>
                   <div className="mb-4">
                     <p className="text-gray-500 text-sm">Project Type</p>
@@ -600,12 +651,12 @@ const ClientOnboarding: React.FC = () => {
                   <div className="mb-4">
                     <p className="text-gray-500 text-sm">Selected Features</p>
                     <p className="font-medium">
-                      {form.getValues().features?.length 
-                        ? form.getValues().features.join(', ') 
+                      {form.getValues().features?.length
+                        ? form.getValues().features.join(', ')
                         : 'None selected'}
                     </p>
                   </div>
-                  
+
                   <h4 className="font-bold text-lg mb-4 mt-6">Budget & Timeline</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -630,7 +681,7 @@ const ClientOnboarding: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <FormField
                   control={form.control}
                   name="termsAgreed"
@@ -645,7 +696,7 @@ const ClientOnboarding: React.FC = () => {
                           />
                         </FormControl>
                         <FormLabel className="text-gray-700">
-                          I agree to the <a href="#" className="text-primary hover:underline">Terms and Conditions</a> and 
+                          I agree to the <a href="#" className="text-primary hover:underline">Terms and Conditions</a> and
                           <a href="#" className="text-primary hover:underline"> Privacy Policy</a>.
                         </FormLabel>
                       </div>
@@ -653,16 +704,16 @@ const ClientOnboarding: React.FC = () => {
                     </FormItem>
                   )}
                 />
-                
+
                 <div className="flex justify-between">
-                  <Button 
+                  <Button
                     type="button"
                     onClick={goToPrevStep}
                     className="bg-gray-200 text-gray-700 px-8 py-3 rounded-lg font-semibold hover:bg-gray-300 transition"
                   >
                     <i className="fas fa-arrow-left mr-2"></i> Previous
                   </Button>
-                  <Button 
+                  <Button
                     type="submit"
                     className="bg-primary text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-600 transition"
                     disabled={onboardingMutation.isPending}
