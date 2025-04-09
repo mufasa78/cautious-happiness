@@ -1,3 +1,11 @@
+import dotenv from 'dotenv';
+
+// Load environment variables from .env file
+// In production, environment variables are set by Vercel
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config();
+}
+
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
@@ -44,12 +52,12 @@ app.use((req, res, next) => {
     const message = err.message || "Internal Server Error";
 
     log(`Error: ${message} (${status})`);
-    
-    res.status(status).json({ 
+
+    res.status(status).json({
       success: false,
-      message 
+      message
     });
-    
+
     // Don't throw the error again as it will crash the server
     // Only log it
     console.error(err);
@@ -64,15 +72,12 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = 5000;
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
+  // In production (like Vercel), use the PORT environment variable
+  // Otherwise, default to port 5000 for local development
+  const port = process.env.PORT || 5000;
+  const host = process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost';
+
+  server.listen(port, host, () => {
+    log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${port}`);
   });
 })();
