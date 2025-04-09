@@ -12,7 +12,16 @@ dotenv.config();
 // Create Express app
 const app = express();
 
-// Configure CORS
+// Configure CORS - more permissive for initial deployment
+app.use(cors({
+  origin: '*', // Allow all origins during initial testing
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Once everything is working, you can restrict to specific origins:
+/*
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5000',
@@ -24,7 +33,7 @@ app.use(cors({
   origin: function(origin, callback) {
     // Allow requests with no origin (like mobile apps, curl requests)
     if (!origin) return callback(null, true);
-    
+
     if (allowedOrigins.indexOf(origin) === -1) {
       const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
       return callback(new Error(msg), false);
@@ -35,9 +44,24 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+*/
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({
+    message: 'PortfolioHub API is running',
+    version: '1.0.0',
+    endpoints: [
+      '/api/login',
+      '/api/me',
+      '/api/health',
+      '/api/debug'
+    ]
+  });
+});
 
 // JWT Secret
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
@@ -138,7 +162,24 @@ app.get('/api/me', authenticateJWT, async (req, res) => {
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', environment: process.env.NODE_ENV });
+  res.json({
+    status: 'ok',
+    environment: process.env.NODE_ENV,
+    database: process.env.DATABASE_URL ? 'configured' : 'not configured',
+    jwt: process.env.JWT_SECRET ? 'configured' : 'not configured',
+    email: process.env.EMAIL_USER ? 'configured' : 'not configured'
+  });
+});
+
+// Debug endpoint to check environment variables (remove in production)
+app.get('/api/debug', (req, res) => {
+  res.json({
+    env: process.env.NODE_ENV,
+    port: process.env.PORT,
+    database: process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 20) + '...' : null,
+    jwt: process.env.JWT_SECRET ? process.env.JWT_SECRET.substring(0, 10) + '...' : null,
+    email: process.env.EMAIL_USER || null
+  });
 });
 
 // Start the server
