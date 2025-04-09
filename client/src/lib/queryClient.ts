@@ -12,13 +12,16 @@ async function throwIfResNotOk(res: Response) {
 const getAuthHeaders = () => {
   const token = getAuthToken();
   const headers: Record<string, string> = {};
-  
+
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   }
-  
+
   return headers;
 };
+
+// Get the API base URL from environment or use a default
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 export async function apiRequest(
   method: string,
@@ -28,12 +31,15 @@ export async function apiRequest(
   const headers: Record<string, string> = {
     ...getAuthHeaders(),
   };
-  
+
   if (data) {
     headers["Content-Type"] = "application/json";
   }
-  
-  const res = await fetch(url, {
+
+  // Prepend the API base URL if the URL starts with /api
+  const fullUrl = url.startsWith('/api') ? `${API_BASE_URL}${url}` : url;
+
+  const res = await fetch(fullUrl, {
     method,
     headers,
     body: data ? JSON.stringify(data) : undefined,
@@ -49,7 +55,13 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey[0] as string, {
+    // Get the URL from the query key
+    const url = queryKey[0] as string;
+
+    // Prepend the API base URL if the URL starts with /api
+    const fullUrl = url.startsWith('/api') ? `${API_BASE_URL}${url}` : url;
+
+    const res = await fetch(fullUrl, {
       headers: getAuthHeaders(),
     });
 
