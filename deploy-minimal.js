@@ -2,8 +2,13 @@
  * This script prepares a minimal deployment for Railway
  */
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Get the current directory
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Create a deployment directory
 const deployDir = path.join(__dirname, 'minimal-deploy');

@@ -1,6 +1,6 @@
 // Minimal Express server for Railway deployment
-const express = require('express');
-const cors = require('cors');
+import express from 'express';
+import cors from 'cors';
 
 // Create Express app
 const app = express();
@@ -11,7 +11,7 @@ app.use(express.json());
 
 // Root endpoint
 app.get('/', (req, res) => {
-  res.json({ 
+  res.json({
     message: 'Minimal API is running',
     env: process.env.NODE_ENV || 'development'
   });
@@ -20,7 +20,7 @@ app.get('/', (req, res) => {
 // Login endpoint (mock)
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
-  
+
   // Mock authentication
   if (username === 'Mufasa' && password === '$Paxful90210') {
     res.json({
@@ -38,8 +38,8 @@ app.post('/api/login', (req, res) => {
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
+  res.json({
+    status: 'ok',
     environment: process.env.NODE_ENV || 'development'
   });
 });

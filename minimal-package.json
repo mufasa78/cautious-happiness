@@ -1,6 +1,7 @@
 {
   "name": "minimal-api",
   "version": "1.0.0",
+  "type": "module",
   "main": "minimal-server.js",
   "scripts": {
     "start": "node minimal-server.js"
