@@ -16,6 +16,14 @@
       "dest": "/dist/index.js"
     },
     {
+      "src": "/assets/(.*)",
+      "dest": "/dist/public/assets/$1"
+    },
+    {
+      "src": "/favicon.png",
+      "dest": "/dist/public/favicon.png"
+    },
+    {
       "handle": "filesystem"
     },
     {

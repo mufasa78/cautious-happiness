@@ -76,7 +76,29 @@ export function serveStatic(app: Express) {
     );
   }
 
-  app.use(express.static(distPath));
+  // Serve static files with proper caching
+  app.use(express.static(distPath, {
+    maxAge: '1d',
+    etag: true
+  }));
+
+  // Log the static files directory
+  console.log(`Serving static files from: ${distPath}`);
+
+  // List the files in the directory for debugging
+  try {
+    const files = fs.readdirSync(distPath);
+    console.log('Files in static directory:', files);
+
+    // Check if index.html exists
+    if (fs.existsSync(path.resolve(distPath, "index.html"))) {
+      console.log('index.html found in static directory');
+    } else {
+      console.warn('WARNING: index.html not found in static directory');
+    }
+  } catch (error) {
+    console.error('Error listing static files:', error);
+  }
 
   // fall through to index.html if the file doesn't exist
   app.use("*", (_req, res) => {
