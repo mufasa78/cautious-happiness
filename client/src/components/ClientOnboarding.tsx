@@ -651,8 +651,8 @@ const ClientOnboarding: React.FC = () => {
                   <div className="mb-4">
                     <p className="text-gray-500 text-sm">Selected Features</p>
                     <p className="font-medium">
-                      {form.getValues().features?.length
-                        ? form.getValues().features.join(', ')
+                      {(form.getValues().features || []).length > 0
+                        ? (form.getValues().features || []).join(', ')
                         : 'None selected'}
                     </p>
                   </div>
