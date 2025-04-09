@@ -16,19 +16,36 @@ if (!fs.existsSync('dist/public')) {
 // Run the build command
 console.log('Running build command...');
 try {
+  // Build the client
   execSync('npm run build', { stdio: 'inherit' });
-  console.log('Build completed successfully!');
+  console.log('Client build completed successfully!');
+
+  // Copy the client/index.html to dist/public if it doesn't exist
+  if (!fs.existsSync('dist/public/index.html') && fs.existsSync('client/index.html')) {
+    fs.copyFileSync('client/index.html', 'dist/public/index.html');
+    console.log('Copied index.html to dist/public');
+  }
+
+  // List the files in dist/public for debugging
+  if (fs.existsSync('dist/public')) {
+    console.log('Files in dist/public:');
+    const files = fs.readdirSync('dist/public');
+    console.log(files);
+
+    // Check for assets directory
+    if (fs.existsSync('dist/public/assets')) {
+      console.log('Files in dist/public/assets:');
+      const assetFiles = fs.readdirSync('dist/public/assets');
+      console.log(assetFiles);
+    }
+  }
+
 } catch (error) {
   console.error('Build failed:', error);
   process.exit(1);
 }
 
 // Verify the build output
-if (!fs.existsSync('dist/index.js')) {
-  console.error('Error: dist/index.js not found after build');
-  process.exit(1);
-}
-
 if (!fs.existsSync('dist/public/index.html')) {
   console.error('Error: dist/public/index.html not found after build');
   process.exit(1);

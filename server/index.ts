@@ -8,9 +8,12 @@ if (process.env.NODE_ENV !== 'production') {
 
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
+import { setupVite, log } from "./vite";
+import path from "path";
+import fs from "fs";
 
-const app = express();
+// Create Express app
+export const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
@@ -69,7 +72,30 @@ app.use((req, res, next) => {
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
-    serveStatic(app);
+    // In production, serve static files directly
+    const clientPath = path.resolve(process.cwd(), 'dist/public');
+    console.log(`Serving static files from: ${clientPath}`);
+
+    // Check if the directory exists
+    if (fs.existsSync(clientPath)) {
+      console.log('Static directory exists');
+      try {
+        const files = fs.readdirSync(clientPath);
+        console.log('Files in static directory:', files);
+      } catch (error) {
+        console.error('Error listing static files:', error);
+      }
+    } else {
+      console.warn('Static directory does not exist:', clientPath);
+    }
+
+    // Serve static files
+    app.use(express.static(clientPath));
+
+    // Serve index.html for all other routes
+    app.get('*', (_req, res) => {
+      res.sendFile(path.resolve(clientPath, 'index.html'));
+    });
   }
 
   // In production (like Vercel), use the PORT environment variable
