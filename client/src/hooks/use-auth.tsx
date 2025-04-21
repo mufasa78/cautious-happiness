@@ -46,11 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return null;
         }
         
-        const res = await fetch("/api/me", {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
+        const res = await apiRequest("GET", "/api/me");
         
         if (res.status === 401) {
           removeAuthToken();
@@ -71,12 +67,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
-      const res = await apiRequest("POST", "/api/login", credentials);
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Login failed");
+      try {
+        const res = await apiRequest("POST", "/api/login", credentials);
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.error || "Login failed");
+        }
+        return await res.json();
+      } catch (error) {
+        console.error('Login request failed:', error);
+        throw error;
       }
-      return await res.json();
     },
     onSuccess: (data) => {
       // Store the token in localStorage

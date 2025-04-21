@@ -110,11 +110,11 @@ const Footer: React.FC = () => {
               </li>
               <li className="flex items-start">
                 <i className="fas fa-envelope mt-1 mr-3 text-gray-400"></i>
-                <span className="text-gray-300">info@mufasa.com</span>
+                <span className="text-gray-300">helpwithmufasa@proton.me</span>
               </li>
               <li className="flex items-start">
                 <i className="fas fa-phone mt-1 mr-3 text-gray-400"></i>
-                <span className="text-gray-300">+1 (234) 567-8901</span>
+                <span className="text-gray-300">+254 (716) 830-746</span>
               </li>
             </ul>
           </div>
