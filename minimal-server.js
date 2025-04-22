@@ -9,6 +9,9 @@ const app = express();
 app.use(cors({ origin: '*' }));
 app.use(express.json());
 
+// Serve static files from the client/dist directory
+app.use(express.static('client/dist'));
+
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({

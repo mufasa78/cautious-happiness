@@ -2,7 +2,9 @@ services:
   - type: web
     name: portfoliohub-api
     env: node
-    buildCommand: npm install
+    buildCommand: |
+      npm install
+      cd client && npm install && npm run build
     startCommand: node minimal-server.js
     envVars:
       - key: NODE_ENV
