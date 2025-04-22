@@ -173,7 +173,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    return {
+      user: null,
+      isLoading: false,
+      error: null,
+      loginMutation: {} as UseMutationResult<{ user: User, token: string }, Error, LoginData>,
+      logoutMutation: {} as UseMutationResult<void, Error, void>,
+      registerMutation: {} as UseMutationResult<{ user: User, token: string }, Error, RegisterData>
+    };
   }
   return context;
 }

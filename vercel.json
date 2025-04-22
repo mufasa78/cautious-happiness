@@ -30,7 +30,8 @@
     "SMTP_HOST": "@smtp_host",
     "SMTP_PORT": "@smtp_port",
     "SMTP_USER": "@smtp_user",
-    "SMTP_PASS": "@smtp_pass"
+    "SMTP_PASS": "@smtp_pass",
+    "GITHUB_TOKEN": "@github_token"
   },
   "headers": [
     {

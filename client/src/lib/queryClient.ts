@@ -21,7 +21,10 @@ const getAuthHeaders = () => {
 };
 
 // Get the API base URL from environment or use a default
-const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+// Ensure API_BASE_URL doesn't end with a slash
+const normalizedApiBaseUrl = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
 
 export async function apiRequest(
   method: string,

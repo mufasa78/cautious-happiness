@@ -527,7 +527,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GitHub API integration - fetch repositories from mufasa78
   apiRouter.get("/github/repos", async (req, res) => {
     try {
-      const octokit = new Octokit();
+      const octokit = new Octokit({
+        auth: process.env.GITHUB_TOKEN // Add GitHub token for authentication
+      });
       
       // Fetch repositories for the specific GitHub username
       const response = await octokit.rest.repos.listForUser({
