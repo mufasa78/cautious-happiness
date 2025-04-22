@@ -1,6 +1,7 @@
 // Minimal Express server for Railway deployment
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
 
 // Create Express app
 const app = express();
@@ -9,11 +10,11 @@ const app = express();
 app.use(cors({ origin: '*' }));
 app.use(express.json());
 
-// Serve static files from the client/dist directory
-app.use(express.static('client/dist'));
+// Serve static files from the dist directory
+app.use(express.static('dist'));
 
 // Root endpoint
-app.get('/', (req, res) => {
+app.get('/', (_req, res) => {
   res.json({
     message: 'Minimal API is running',
     env: process.env.NODE_ENV || 'development'
@@ -40,11 +41,16 @@ app.post('/api/login', (req, res) => {
 });
 
 // Health check endpoint
-app.get('/api/health', (req, res) => {
+app.get('/api/health', (_req, res) => {
   res.json({
     status: 'ok',
     environment: process.env.NODE_ENV || 'development'
   });
+});
+
+// Fallback for SPA routing - must be last route
+app.get('*', (_req, res) => {
+  res.sendFile(path.resolve(process.cwd(), 'dist', 'index.html'));
 });
 
 // Start the server
